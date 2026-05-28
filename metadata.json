@@ -1,0 +1,6 @@
+{
+  "name": "Torshita Banerjee Birthday",
+  "description": "An interactive, animated library, book, and patisserie-themed birthday celebration for Torshita Banerjee, featuring cozy bookshelves, falling pages and cookies, warm tea cups, and a delightful sheep prank!",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
