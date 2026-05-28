@@ -21,26 +21,24 @@ import { Sparkles, Music, Volume2, ShieldAlert } from 'lucide-react';
 export default function App() {
   const [sheepPrankActive, setSheepPrankActive] = useState(false);
   const [letterUnlocked, setLetterUnlocked] = useState(false);
-  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
 
-  // Detect portrait orientation on mobile devices
+  // Detect landscape orientation on mobile devices — app is portrait-only on mobile
   useEffect(() => {
     const checkOrientation = () => {
-      const isMobileWidth = window.innerWidth < 1024;
-      const isPortrait = window.innerHeight > window.innerWidth;
-      setIsPortraitMobile(isMobileWidth && isPortrait);
+      const isMobileWidth = window.innerWidth < 1024 || window.innerHeight < 1024;
+      const isLandscape = window.innerWidth > window.innerHeight;
+      setIsLandscapeMobile(isMobileWidth && isLandscape);
     };
 
     checkOrientation();
 
     window.addEventListener('resize', checkOrientation);
-    // Also listen for the native orientationchange event
     window.addEventListener('orientationchange', () => {
-      // Small delay so dimensions settle after the OS rotation animation
       setTimeout(checkOrientation, 150);
     });
 
-    const mql = window.matchMedia('(orientation: portrait)');
+    const mql = window.matchMedia('(orientation: landscape)');
     const handleMql = () => checkOrientation();
     mql.addEventListener('change', handleMql);
 
@@ -71,37 +69,37 @@ export default function App() {
     };
   }, []);
 
-  // Portrait-mode gate: block the entire app on mobile portrait
-  if (isPortraitMobile) {
+  // Landscape-mode gate: block the app on mobile landscape, it only works in portrait
+  if (isLandscapeMobile) {
     return (
       <div className="fixed inset-0 z-[9999] bg-[#0b0804] flex flex-col items-center justify-center text-center px-8 select-none">
         {/* Magical dark background with subtle radial glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(245,158,11,0.08)_0%,_transparent_70%)] pointer-events-none" />
 
-        {/* Animated rotate phone icon */}
+        {/* Animated rotate phone icon — shows phone rotating from landscape back to portrait */}
         <div className="relative z-10 mb-8">
           <svg
-            className="w-24 h-24 text-amber-400 animate-[rotatePhone_2s_ease-in-out_infinite]"
+            className="w-24 h-24 text-amber-400 animate-[rotateToPortrait_2s_ease-in-out_infinite]"
             viewBox="0 0 100 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* Phone body */}
-            <rect x="30" y="10" width="40" height="70" rx="6" stroke="currentColor" strokeWidth="3" fill="none" />
+            {/* Phone body in landscape */}
+            <rect x="10" y="30" width="70" height="40" rx="6" stroke="currentColor" strokeWidth="3" fill="none" />
             {/* Screen */}
-            <rect x="34" y="18" width="32" height="52" rx="2" fill="currentColor" opacity="0.12" />
+            <rect x="18" y="34" width="52" height="32" rx="2" fill="currentColor" opacity="0.12" />
             {/* Home button */}
-            <circle cx="50" cy="75" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
+            <circle cx="75" cy="50" r="3" stroke="currentColor" strokeWidth="2" fill="none" />
             {/* Rotation arrow */}
             <path
-              d="M75,50 A30,30 0 0,1 50,80"
+              d="M50,25 A30,30 0 0,1 80,50"
               stroke="currentColor"
               strokeWidth="2.5"
               fill="none"
               strokeLinecap="round"
               strokeDasharray="4 3"
             />
-            <polygon points="48,82 54,82 51,88" fill="currentColor" />
+            <polygon points="48,23 54,23 51,17" fill="currentColor" />
           </svg>
         </div>
 
@@ -110,7 +108,7 @@ export default function App() {
           Rotate Your Phone
         </h1>
         <p className="font-magic text-sm text-amber-200/70 tracking-wide max-w-xs leading-relaxed relative z-10">
-          This birthday experience is best viewed in landscape mode. Please turn your phone sideways!
+          This birthday experience is designed for portrait mode. Please hold your phone upright!
         </p>
 
         {/* Decorative corner ornaments */}

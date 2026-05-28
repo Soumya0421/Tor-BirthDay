@@ -89,18 +89,18 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   }
 }
 
-@keyframes rotatePhone {
+@keyframes rotateToPortrait {
   0%, 100% {
-    transform: rotate(0deg);
+    transform: rotate(-90deg);
   }
   25% {
-    transform: rotate(-90deg);
+    transform: rotate(0deg);
   }
   50% {
-    transform: rotate(-90deg);
+    transform: rotate(0deg);
   }
   75% {
-    transform: rotate(0deg);
+    transform: rotate(-90deg);
   }
 }
 
