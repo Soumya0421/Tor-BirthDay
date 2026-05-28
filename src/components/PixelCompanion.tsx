@@ -5,6 +5,22 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
+// Single shared AudioContext — mobile browsers limit the number of concurrent
+// AudioContext instances (typically ~6). Reusing one context ensures the full
+// birthday song plays through on mobile without notes silently dropping.
+let sharedAudioCtx: AudioContext | null = null;
+function getSharedAudioCtx(): AudioContext {
+  if (!sharedAudioCtx) {
+    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctor) throw new Error('Web Audio not supported');
+    sharedAudioCtx = new Ctor();
+  }
+  if (sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+}
+
 // Color Palette for our gorgeous cozy Calico Library Kitty Companion
 const w = '#ffffff'; // fluffy white fur
 const o = '#f97316'; // ginger orange patched spots
@@ -165,9 +181,7 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
   // Synthesizes a beautiful sweet chirping pixel vocalizer simulation
   const playVocalNote = (s: AudioSyllable) => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = getSharedAudioCtx();
       const now = ctx.currentTime;
 
       const osc = ctx.createOscillator();
@@ -183,14 +197,14 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
 
       // Sweet, warm singing vibrato modulator
       vibrato.type = 'sine';
-      vibrato.frequency.setValueAtTime(6.4, now); // Vibrato vocal rate
-      vibratoGain.gain.setValueAtTime(s.freq * 0.018, now); // Sweet microscopic wobble
+      vibrato.frequency.setValueAtTime(6.4, now);
+      vibratoGain.gain.setValueAtTime(s.freq * 0.018, now);
 
       vibrato.connect(vibratoGain);
       vibratoGain.connect(osc.frequency);
       vibrato.start(now);
 
-      // Harmonics generator to warm up tone (looks like cute retro synth humming)
+      // Harmonics generator to warm up tone
       resonanceOsc.type = 'sine';
       resonanceOsc.frequency.setValueAtTime(s.freq * 2, now);
       vibratoGain.connect(resonanceOsc.frequency);
@@ -217,7 +231,7 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
       resonanceOsc.stop(now + s.duration);
       vibrato.stop(now + s.duration);
     } catch (err) {
-      // AudioCtx fallback
+      // Web Audio fallback
     }
   };
 
@@ -249,23 +263,20 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
     
     // Play structural high pitched firework audio chirps
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        const now = ctx.currentTime;
-        [523, 659, 783, 1046].forEach((f, idx) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(f, now + idx * 0.08);
-          gain.gain.setValueAtTime(0.15, now + idx * 0.08);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now + idx * 0.08);
-          osc.stop(now + idx * 0.08 + 0.30);
-        });
-      }
+      const ctx = getSharedAudioCtx();
+      const now = ctx.currentTime;
+      [523, 659, 783, 1046].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.30);
+      });
     } catch (e) {}
 
     const p = posRef.current;
@@ -302,52 +313,49 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
 
     // Play a beautiful, sweet lowpass sweeping sound resembling falling magical golden sand
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        const now = ctx.currentTime;
+      const ctx = getSharedAudioCtx();
+      const now = ctx.currentTime;
 
-        // Custom sand sweep sound synthesis
-        const bSize = ctx.sampleRate * 1.5;
-        const bBuffer = ctx.createBuffer(1, bSize, ctx.sampleRate);
-        const bData = bBuffer.getChannelData(0);
-        for (let j = 0; j < bSize; j++) {
-          bData[j] = Math.random() * 2 - 1;
-        }
-        
-        const noise = ctx.createBufferSource();
-        noise.buffer = bBuffer;
-
-        const lowpass = ctx.createBiquadFilter();
-        lowpass.type = 'lowpass';
-        lowpass.frequency.setValueAtTime(1200, now);
-        lowpass.frequency.exponentialRampToValueAtTime(15, now + 1.3);
-
-        const sandGain = ctx.createGain();
-        sandGain.gain.setValueAtTime(0.16, now);
-        sandGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-
-        noise.connect(lowpass);
-        lowpass.connect(sandGain);
-        sandGain.connect(ctx.destination);
-        noise.start(now);
-        noise.stop(now + 1.5);
-
-        // Sweet tiny high pitched pixel note say sweet goodbye
-        const osc = ctx.createOscillator();
-        const oscGain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(659.25, now);
-        osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.35);
-        
-        oscGain.gain.setValueAtTime(0.12, now);
-        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-
-        osc.connect(oscGain);
-        oscGain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.75);
+      // Custom sand sweep sound synthesis
+      const bSize = ctx.sampleRate * 1.5;
+      const bBuffer = ctx.createBuffer(1, bSize, ctx.sampleRate);
+      const bData = bBuffer.getChannelData(0);
+      for (let j = 0; j < bSize; j++) {
+        bData[j] = Math.random() * 2 - 1;
       }
+      
+      const noise = ctx.createBufferSource();
+      noise.buffer = bBuffer;
+
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.setValueAtTime(1200, now);
+      lowpass.frequency.exponentialRampToValueAtTime(15, now + 1.3);
+
+      const sandGain = ctx.createGain();
+      sandGain.gain.setValueAtTime(0.16, now);
+      sandGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+      noise.connect(lowpass);
+      lowpass.connect(sandGain);
+      sandGain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 1.5);
+
+      // Sweet tiny high pitched pixel note say sweet goodbye
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, now);
+      osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.35);
+      
+      oscGain.gain.setValueAtTime(0.12, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.75);
     } catch (err) {}
 
     // Generate 450 gorgeous fine glowing sand particles drifting from the center screen zone
