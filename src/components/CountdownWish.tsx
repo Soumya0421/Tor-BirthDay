@@ -220,7 +220,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                   { label: 'Seconds', val: timeLeft.seconds },
                 ].map((col, idx) => (
                   <div key={col.label} className="flex flex-col bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4 text-center backdrop-blur-sm shadow-inner transition hover:border-amber-500/20">
-                    <span className="text-4xl sm:text-6xl font-magic font-extrabold accent-gradient gold-glow">
+                    <span className="text-2xl sm:text-6xl font-magic font-extrabold accent-gradient gold-glow">
                       {String(col.val).padStart(2, '0')}
                     </span>
                     <span className="text-[10px] sm:text-xs font-magic uppercase tracking-widest text-amber-200/65 mt-1.5 font-bold">
@@ -676,7 +676,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                         {/* Outer decorative line inset */}
                         <div className="absolute inset-1.5 border border-amber-500/5 rounded-[1.9rem] pointer-events-none" />
 
-                        <div className="absolute top-5 right-5 text-[10px] font-magic uppercase tracking-[0.15em] text-amber-200 border border-amber-500/20 px-2.5 py-1 rounded-md bg-amber-500/5 z-20">
+                        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-magic uppercase tracking-[0.15em] text-amber-200 border border-amber-500/20 px-2.5 py-1 rounded-md bg-amber-500/5 z-20 whitespace-nowrap">
                           ✦ Sealed with Magic ✦
                         </div>
 
