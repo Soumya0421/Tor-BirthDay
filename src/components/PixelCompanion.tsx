@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { pauseAmbientSound, resumeAmbientSound } from '../utils/audio';
 
 let sharedAudioCtx: AudioContext | null = null;
 function getSharedAudioCtx(): AudioContext {
@@ -47,8 +48,8 @@ const KITTY_PIXELS_DOWN: string[][] = [
   [_, _, K, W, W, K, _, _, _, _, K, W, W, K, _, _],
   [_, _, K, W, W, W, K, K, K, K, W, W, W, K, _, _],
   [_, K, W, W, '#d97706', '#d97706', W, W, W, W, '#d97706', W, W, W, K, _],
-  [_, K, W, '#4ade80', K, W, W, '#fed7ca', '#fed7ca', W, W, K, '#4ade80', W, K, _, _],
-  [_, K, W, W, W, W, '#fed7ca', '#f472b6', '#fed7ca', '#f472b6', '#fed7ca', W, W, W, K, _, _],
+  [_, K, W, '#4ade80', K, W, W, '#fed7ca', '#fed7ca', W, W, K, '#4ade80', W, K, _],
+  [_, K, W, W, W, W, '#fed7ca', '#f472b6', '#fed7ca', '#f472b6', '#fed7ca', W, W, W, K, _],
   [_, _, K, W, '#f472b6', W, W, '#fed7ca', '#fed7ca', W, W, '#f472b6', W, K, _, _],
   [_, _, _, K, K, W, W, '#fbbf24', '#fbbf24', W, W, K, K, _, _, _],
   [_, _, _, _, K, K, W, W, W, W, W, K, K, _, _, _],
@@ -96,9 +97,26 @@ const SWEET_HAPPY_BIRTHDAY: AudioSyllable[] = [
   { note: 'C5', freq: 523.25, duration: 1.50, syllable: 'YOU! 🎉', pause: 0.80 }
 ];
 
-export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boolean }) {
+interface SandParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  life: number;
+}
+
+export default function PixelCompanion({ 
+  letterUnlocked, 
+  onComplete 
+}: { 
+  letterUnlocked: boolean, 
+  onComplete?: () => void 
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const confettiRef = useRef<any[]>([]);
+  const sandParticlesRef = useRef<SandParticle[]>([]);
+  const pixelPositionsRef = useRef<{x: number, y: number, color: string}[]>([]);
   
   const [hasAppeared, setHasAppeared] = useState(false);
   const [isSinging, setIsSinging] = useState(false);
@@ -114,6 +132,7 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
   const [spriteSize, setSpriteSize] = useState(0);
   const [kittyX, setKittyX] = useState(0);
   const [spiritVisible, setSpiritVisible] = useState(true);
+  const [bowHoldTime, setBowHoldTime] = useState(0);
 
   // Initialize position and make it visible!
   useEffect(() => {
@@ -159,20 +178,22 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
       // Update tick for animation
       setTick(prev => prev + 1);
 
-      // Update confetti
-      confettiRef.current = confettiRef.current.filter(part => {
+      // Update sand particles
+      sandParticlesRef.current = sandParticlesRef.current.filter((part, idx) => {
         part.x += part.vx;
         part.y += part.vy;
-        part.vy += 0.15;
-        part.life -= part.decay;
-        part.alpha = Math.max(0, part.life);
+        part.vy += 0.15; // gravity
+        part.life -= 0.008;
+        part.vx *= 0.998; // slight drag
 
         ctx.save();
-        ctx.globalAlpha = part.alpha;
+        ctx.globalAlpha = part.life;
         ctx.fillStyle = part.color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 3;
         ctx.shadowColor = part.color;
-        ctx.fillRect(part.x, part.y, part.size, part.size);
+        ctx.beginPath();
+        ctx.arc(part.x, part.y, part.size, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
 
         return part.life > 0;
@@ -191,20 +212,30 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
         ctx.translate(kittyX, kittyY);
         
         if (isBowing) {
-          ctx.scale(1 - bowProgress * 0.3, 1 - bowProgress * 0.3);
-          ctx.rotate(bowProgress * 0.5);
+          // Bow down: scale down vertically and rotate forward
+          ctx.scale(1 - bowProgress * 0.2, 1 - bowProgress * 0.4);
+          ctx.rotate(bowProgress * 0.6);
         } else if (isDancing) {
           ctx.rotate(Math.sin(tick * 0.15) * 0.15);
         }
         
         ctx.translate(-spriteW / 2, -spriteH / 2);
 
+        // Store pixel positions for when we explode
+        pixelPositionsRef.current = [];
+        
         for (let r = 0; r < sprite.length; r++) {
           for (let c = 0; c < sprite[r].length; c++) {
             const color = sprite[r][c];
             if (color) {
               ctx.fillStyle = color;
               ctx.fillRect(c * spriteSize, r * spriteSize, spriteSize, spriteSize);
+              
+              pixelPositionsRef.current.push({
+                x: kittyX - spriteW/2 + c * spriteSize + spriteSize/2,
+                y: kittyY - spriteH/2 + r * spriteSize + spriteSize/2,
+                color
+              });
             }
           }
         }
@@ -224,42 +255,72 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
     }
 
     if (isBowing && bowProgress < 1) {
-      setBowProgress(prev => Math.min(1, prev + 0.03));
-    }
-
-    if (isBowing && bowProgress >= 1 && !isExploded) {
-      setIsExploded(true);
-      setSpiritVisible(false);
-      const colors = ['#f97706', '#ef4444', '#facc15', '#fef08a', '#c084fc', '#f472b6', '#38bdf8', '#34d399'];
-      for (let i = 0; i < 500; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = Math.random() * 12 + 4;
-        confettiRef.current.push({
-          x: kittyX,
-          y: kittyY,
-          vx: Math.cos(angle) * velocity,
-          vy: Math.sin(angle) * velocity - 3,
-          size: Math.random() * 8 + 4,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          alpha: 1,
-          life: 1,
-          decay: Math.random() * 0.008 + 0.003
+      setBowProgress(prev => Math.min(1, prev + 0.02));
+    } else if (isBowing && bowProgress >= 1) {
+      setBowHoldTime(prev => prev + 1);
+      
+      // Hold the bow for about 1 second (60 ticks) then explode into sand
+      if (bowHoldTime > 60 && !isExploded) {
+        setIsExploded(true);
+        setSpiritVisible(false);
+        if (onComplete) {
+          onComplete();
+        }
+        
+        // Sand colors
+        const sandColors = ['#F5DEB3', '#DEB887', '#D2B48C', '#C4A35A', '#B8860B', '#CD853F', '#FFDEAD', '#F4A460'];
+        
+        // Create sand particles from all the stored pixel positions
+        pixelPositionsRef.current.forEach((pos) => {
+          for (let i = 0; i < 3; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 8 + 1;
+            sandParticlesRef.current.push({
+              x: pos.x,
+              y: pos.y,
+              vx: Math.cos(angle) * speed + (Math.random() * 2 - 1),
+              vy: Math.sin(angle) * speed - 2,
+              size: Math.random() * 4 + 1,
+              color: pos.color || sandColors[Math.floor(Math.random() * sandColors.length)],
+              life: 1
+            });
+          }
         });
+        
+        // Add extra sand particles for effect
+        for (let i = 0; i < 100; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 10 + 2;
+          sandParticlesRef.current.push({
+            x: kittyX,
+            y: kittyY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 4,
+            size: Math.random() * 5 + 1,
+            color: sandColors[Math.floor(Math.random() * sandColors.length)],
+            life: 1
+          });
+        }
       }
     }
-  }, [tick, isDancing, isBowing, bowProgress, isExploded, kittyX, kittyY]);
+  }, [tick, isDancing, isBowing, bowProgress, isExploded, kittyX, kittyY, bowHoldTime]);
 
   // Start the show!
   const startTheShow = () => {
     if (isSinging || isExploded) return;
     setIsSinging(true);
     setIsDancing(true);
+    
+    // Pause ambient sound when singing starts
+    pauseAmbientSound();
 
     let noteIndex = 0;
     const playNote = () => {
       if (noteIndex >= SWEET_HAPPY_BIRTHDAY.length) {
         setIsDancing(false);
         setIsBowing(true);
+        // Resume ambient sound after singing is done
+        setTimeout(resumeAmbientSound, 1000);
         return;
       }
 
@@ -308,20 +369,21 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
           className="absolute z-50 pointer-events-none"
           style={{
             left: '50%',
-            top: kittyY - spriteH - 150,
+            top: kittyY - spriteH - 200,
             transform: 'translateX(-50%)',
-            width: window.innerWidth < 768 ? '90%' : '450px'
+            width: '95%',
+            maxWidth: '450px'
           }}
         >
           <div
-            className="w-full bg-gradient-to-br from-[#0c0804]/98 to-[#050301]/98 border-2 border-amber-500/40 rounded-[3rem] px-6 sm:px-10 py-6 sm:py-8 shadow-2xl shadow-amber-500/10"
+            className="w-full bg-gradient-to-br from-[#0c0804]/98 to-[#050301]/98 border-2 border-amber-500/40 rounded-[2rem] px-4 sm:px-6 py-4 sm:py-6 shadow-2xl shadow-amber-500/10"
             style={{ boxShadow: '0 0 50px rgba(245, 158, 11, 0.15)' }}
           >
             <div className="flex flex-col items-center gap-2 text-center">
-              <p className="text-[11px] sm:text-sm font-mono text-amber-300 uppercase tracking-[0.3em] mb-1 font-bold">
+              <p className="text-[9px] sm:text-sm font-mono text-amber-300 uppercase tracking-[0.3em] mb-1 font-bold">
                 ✨✨ BOOKSTORE KITTY ✨✨
               </p>
-              <p className="text-base sm:text-xl text-white font-semibold leading-relaxed">
+              <p className="text-sm sm:text-xl text-white font-semibold leading-relaxed">
                 {isSinging ? "Let's sing together! 🎶🎵🎶" : "Tap me to start your birthday show! 🎉🎂"}
               </p>
               {!isSinging && (
@@ -334,7 +396,7 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
             </div>
 
             {/* Bubble tail */}
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 scale-75">
               <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[16px] border-t-[#0c0804]" />
               <div className="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[11px] border-t-amber-500/30 absolute top-0 left-1/2 -translate-x-1/2" />
             </div>
@@ -359,22 +421,22 @@ export default function PixelCompanion({ letterUnlocked }: { letterUnlocked: boo
 
       {/* Sing-along text box - matching the image style! */}
       {isSinging && !isExploded && (
-        <div className="fixed inset-x-4 top-[15%] sm:top-[12%] -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none z-50">
-          <div className="w-full max-w-3xl bg-gradient-to-br from-[#0f0a18]/98 to-[#050308]/98 border-2 border-orange-500/40 rounded-[4rem] px-8 sm:px-16 py-10 sm:py-14 backdrop-blur-xl shadow-2xl"
+        <div className="fixed inset-x-3 top-[3%] flex flex-col items-center justify-center pointer-events-none z-50">
+          <div className="w-full max-w-3xl bg-gradient-to-br from-[#0f0a18]/98 to-[#050308]/98 border-2 border-orange-500/40 rounded-[2.5rem] px-5 sm:px-10 py-6 sm:py-12 backdrop-blur-xl shadow-2xl"
                style={{ boxShadow: '0 0 80px rgba(245, 158, 11, 0.3)' }}
           >
-            <p className="text-[10px] sm:text-sm font-mono text-orange-300 uppercase tracking-[0.4em] mb-2 text-center">
+            <p className="text-[8px] sm:text-sm font-mono text-orange-300 uppercase tracking-[0.3em] mb-1 sm:mb-2 text-center">
               🎵 SING-ALONG 🎵
             </p>
-            <p className="text-[10px] sm:text-sm font-sans text-amber-200/70 mb-6 text-center">
+            <p className="text-[8px] sm:text-sm font-sans text-amber-200/70 mb-4 sm:mb-6 text-center">
               FOR TORSHITA BANERJEE
             </p>
-            <p className="font-serif text-3xl sm:text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 text-center leading-tight">
+            <p className="font-serif text-2xl sm:text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 text-center leading-tight">
               {currentSyllable}
             </p>
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-amber-600" />
-              <p className="font-mono text-xs sm:text-sm text-amber-400 uppercase tracking-widest">
+            <div className="mt-4 sm:mt-8 flex items-center justify-center gap-2">
+              <div className="w-2 h-2 sm:w-4 sm:h-4 rounded-full bg-amber-600" />
+              <p className="font-mono text-[9px] sm:text-xs text-amber-400 uppercase tracking-widest">
                 {currentSyllable} 👑
               </p>
             </div>

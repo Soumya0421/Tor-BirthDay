@@ -17,11 +17,14 @@ import CountdownWish from './components/CountdownWish';
 import SheepPrank from './components/SheepPrank';
 import { AnimatePresence, motion } from 'motion/react';
 import { Sparkles, Music, Volume2, ShieldAlert } from 'lucide-react';
+import { startAmbientSound } from './utils/audio';
 
 export default function App() {
   const [sheepPrankActive, setSheepPrankActive] = useState(false);
   const [letterUnlocked, setLetterUnlocked] = useState(false);
   const [isLandscapeMobile, setIsLandscapeMobile] = useState(false);
+  const [ambientStarted, setAmbientStarted] = useState(false);
+  const [spiritFinished, setSpiritFinished] = useState(false);
 
   // Detect landscape orientation on mobile devices — app is portrait-only on mobile
   useEffect(() => {
@@ -48,6 +51,26 @@ export default function App() {
       mql.removeEventListener('change', handleMql);
     };
   }, []);
+
+  // Start ambient sound on first user interaction
+  useEffect(() => {
+    const startAmbient = () => {
+      if (!ambientStarted) {
+        startAmbientSound();
+        setAmbientStarted(true);
+      }
+    };
+
+    window.addEventListener('click', startAmbient, { once: true });
+    window.addEventListener('touchstart', startAmbient, { once: true });
+    window.addEventListener('keydown', startAmbient, { once: true });
+
+    return () => {
+      window.removeEventListener('click', startAmbient);
+      window.removeEventListener('touchstart', startAmbient);
+      window.removeEventListener('keydown', startAmbient);
+    };
+  }, [ambientStarted]);
 
   useEffect(() => {
     // 1. Prevent right-click context menu globally
@@ -140,13 +163,17 @@ export default function App() {
       <FlowerPetals />
 
       {/* Retro Pixel Companion (Flying Kitten Companion with speech bubble) */}
-      <PixelCompanion letterUnlocked={letterUnlocked} />
+      <PixelCompanion 
+        letterUnlocked={letterUnlocked} 
+        onComplete={() => setSpiritFinished(true)}
+      />
 
       {/* C. Primary Wishing & Celebration Interactive Console */}
       <div className="relative z-20 flex-grow w-full max-w-7xl mx-auto flex items-center justify-center">
         <CountdownWish 
           onTriggerPrank={() => setSheepPrankActive(true)} 
           onLetterUnlock={() => setLetterUnlocked(true)}
+          spiritFinished={spiritFinished}
         />
       </div>
 

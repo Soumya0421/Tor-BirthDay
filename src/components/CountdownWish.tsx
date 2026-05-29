@@ -107,12 +107,13 @@ function PixelArt({ pixels, size = 3 }: { pixels: string[][], size?: number }) {
 interface CountdownWishProps {
   onTriggerPrank: () => void;
   onLetterUnlock: () => void;
+  spiritFinished: boolean;
 }
 
-export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: CountdownWishProps) {
-  // Target birthday: today's midnight (tomorrow at 00:00)
+export default function CountdownWish({ onTriggerPrank, onLetterUnlock, spiritFinished }: CountdownWishProps) {
+  // Target birthday: yesterday at midnight (past date for testing)
   const today = new Date();
-  const targetDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 0);
+  const targetDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 0, 0, 0);
 
   const [timeData, setTimeData] = useState({
     days: 0,
@@ -245,19 +246,19 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
   const giftDetails = [
     {
       title: "📚 Cozy Bookshelf",
-      wish: "Go and read as many books as you want! I know how much you absolutely love books, the comfortable smell of pages, and the beautiful worlds within them. May you lose yourself in endless heartwarming stories and always have a cozy corner to read to your heart's content!",
+      wish: "Go and read as many books as you want! I know you love reading books (except studying 😜). Also remember to keep journaling since you enjoy it so much—don't stop doing it no matter what happens. Whenever you need it, create a cozy corner just for yourself and immerse yourself in your books and journaling with a heartwarming smile. Read and write to your heart's content!",
       color: "from-amber-600 via-orange-600 to-amber-800",
       accent: "text-amber-200"
     },
     {
-      title: "🥟 Sweets & Spicy Momos",
-      wish: "Since you absolutely love food, you must treat yourself to something amazing today! Go eat all the sweet treats you want, and of course, some piping-hot, spicy favorites like momos! Feast happily and without any worries on your special day!",
+      title: "🌶️ Spicy Food Feast",
+      wish: "Since you love spicy food so much, you must treat yourself to something spicy today! Go and eat all the amazing foods like momos, some piping-hot spicy chicken, and more! Although you're lactose intolerant, a little cheesy treat won't hurt 😉. Feast happily without any worries on your special day!",
       color: "from-pink-500 via-rose-500 to-red-600",
       accent: "text-rose-200"
     },
     {
-      title: "🎉 Friends & Laughter",
-      wish: "I hope you get together with your wonderful friends and have the absolute best time laughing and making memories! May you spend this upcoming year surrounded by continuous joy, fun adventures, and endless happiness!",
+      title: "🎉 Joy & Celebration",
+      wish: "I hope you get to celebrate and laugh with family today and have the absolute best time making memories! And don't forget to spend time celebrating this special day next weekend when you have the time. Surround yourself with continuous joy, fun adventures, and endless happiness!",
       color: "from-emerald-500 via-teal-600 to-indigo-600",
       accent: "text-emerald-100"
     },
@@ -293,8 +294,8 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
         </h2>
         
         <h1 className="font-magic-dec text-4xl sm:text-6xl md:text-7xl leading-normal text-center tracking-tight relative z-10 my-4">
-          <span className="font-magic block opacity-70 text-2xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 font-normal tracking-wide text-stone-200">Happy Birthday</span>
-          <span className="accent-gradient block font-black pb-3 pt-1 gold-glow">Torshita Banerjee</span>
+          <span className="font-magic block opacity-70 text-2xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 font-normal tracking-wide text-stone-200 animate-text-shimmer">Happy Birthday</span>
+          <span className="accent-gradient block font-black pb-3 pt-1 gold-glow animate-neon-glow">Torshita</span>
         </h1>
         
         <p className="mt-8 text-center max-w-xl text-stone-200 leading-relaxed font-light text-base sm:text-lg italic relative z-10 px-2 sm:px-6">
@@ -320,7 +321,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
           </div>
           
           <h2 className="font-magic text-2xl sm:text-3xl text-white font-bold tracking-widest mb-6">
-            {timeData.isBirthday ? "You are now 20 girl! 🎉" : "Almost there...."}
+            {timeData.isBirthday ? "You are now 20 girl!" : "Almost there...."}
           </h2>
 
           {/* Countdown/Countup Numbers Grid */}
@@ -344,26 +345,30 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
 
           {/* Early Celebrate CTA */}
           <motion.button
-            whileHover={activeCelebration && !celebrationStarted ? { scale: 1.05 } : {}}
-            whileTap={activeCelebration && !celebrationStarted ? { scale: 0.98 } : {}}
+            whileHover={activeCelebration && !celebrationStarted ? { scale: 1.08, y: -2 } : {}}
+            whileTap={activeCelebration && !celebrationStarted ? { scale: 0.96 } : {}}
             disabled={!activeCelebration}
             onClick={() => {
               if (activeCelebration) {
                 setCelebrationStarted(true);
               }
             }}
-            className={`group relative inline-flex items-center gap-2 px-4 py-3 sm:px-7 sm:py-3.5 rounded-full font-semibold text-sm tracking-wider shadow-lg overflow-hidden transition-all duration-300 ${
+            className={`group relative inline-flex items-center gap-3 px-8 py-4 sm:px-12 sm:py-5 rounded-full font-bold text-base sm:text-lg tracking-wide shadow-2xl overflow-hidden transition-all duration-500 ${
               !activeCelebration 
-                ? "bg-zinc-700 text-zinc-400 shadow-zinc-900/30 cursor-not-allowed opacity-70"
+                ? "bg-gradient-to-br from-zinc-700 to-zinc-800 text-zinc-400 shadow-zinc-900/30 cursor-not-allowed opacity-70 border border-zinc-600/50"
                 : celebrationStarted
-                  ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white cursor-default shadow-amber-500/20"
-                  : "bg-white text-black shadow-white/5 cursor-pointer hover:bg-zinc-100"
+                  ? "bg-gradient-to-br from-pink-400 via-rose-400 to-amber-400 text-white cursor-default shadow-pink-500/30 border-2 border-white/20"
+                  : "bg-gradient-to-br from-pink-300 via-rose-200 to-amber-300 text-pink-900 cursor-pointer hover:from-pink-400 hover:via-rose-300 hover:to-amber-400 border-2 border-white/30 hover:shadow-pink-500/40"
             }`}
             id="btn-celebrate-early"
           >
-            <Sparkles className="w-4 h-4 animate-spin-slow text-amber-600" />
-            <span className="text-xs sm:text-sm">{celebrationStarted ? "celebration started! ✨" : "come on in! 🥐"}</span>
-            <Gift className="w-4 h-4 text-amber-600 transition-transform group-hover:translate-x-0.5" />
+            {/* Kawaii decorative elements */}
+            <div className="absolute -left-2 -top-2 w-6 h-6 bg-amber-300/40 rounded-full blur-sm group-hover:bg-amber-400/60 transition-colors"></div>
+            <div className="absolute -right-3 -bottom-2 w-8 h-8 bg-pink-300/40 rounded-full blur-sm group-hover:bg-pink-400/60 transition-colors"></div>
+            
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 animate-spin-slow" />
+            <span className="text-xs sm:text-sm">{celebrationStarted ? "celebration started!" : "come on in!"}</span>
+            <Gift className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:translate-x-1" />
           </motion.button>
         </motion.div>
 
@@ -391,7 +396,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
 
                   <div>
                     <div className="flex items-center justify-between mb-4 relative z-10">
-                      <span className="text-xs font-magic tracking-wider text-amber-200 font-bold uppercase">🎂 a small birthday cake for you</span>
+                      <span className="text-xs font-magic tracking-wider text-amber-200 font-bold uppercase">a small birthday cake for you</span>
                     </div>
 
                     <h3 className="font-magic text-xl sm:text-2xl text-white font-bold tracking-wide mb-1 relative z-10">MAKE A WISH & BLOW THEM OUT!</h3>
@@ -630,7 +635,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                       </div>
                       <h4 className="serif-display text-lg text-white font-semibold mb-2">You are so wonderful</h4>
                       <p className="font-sans text-stone-200/90 text-xs sm:text-sm leading-relaxed font-light">
-                        Honestly, you are just such an incredibly wonderful human. Hope you never forget that you're a beautiful story of your own, full of sweet strength and lovely quiet chapters. Just stay exactly who you are, because you are amazing!
+                        Honestly, you are just such an incredibly wonderful human. Hope you never forget that you're a beautiful story of your own, full of sweet strength and lovely quiet chapters. Just stay exactly who you are, because you are amazing! You made me realize that being nonchalant about everything doesn't always work. And you always made me smile—so don't change!
                       </p>
                     </div>
                     <div className="mt-6 text-[10px] sm:text-xs font-mono text-amber-300/60 uppercase tracking-widest font-semibold flex items-center gap-1.5">
@@ -650,7 +655,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                       </div>
                       <h4 className="serif-display text-lg text-white font-semibold mb-2">Do exactly what you love</h4>
                       <p className="font-sans text-stone-200/90 text-xs sm:text-sm leading-relaxed font-light">
-                        Go after absolutely anything that makes your heart happy! Make your own rules, trust your gut completely, and let whatever other people have to say just fade into faint background noise. You've got this, always.
+                        Go after absolutely anything that makes your heart happy! Make your own rules, trust your gut completely, and let whatever other people have to say just fade into faint background noise. You've got this, always. But yes, some of your judgments are shit as hell (like Archi 😜). And if you don't like anything just say that and punch them till they faint—you are now a strong girl! But whatever happens, you always stand back up smiling, so CLOCK IT GIRL!
                       </p>
                     </div>
                     <div className="mt-6 text-[10px] sm:text-xs font-mono text-pink-300/60 uppercase tracking-widest font-semibold flex items-center gap-1.5">
@@ -670,7 +675,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                       </div>
                        <h4 className="serif-display text-lg text-white font-semibold mb-2">Protection from annoying energy</h4>
                        <p className="font-sans text-stone-200/90 text-xs sm:text-sm leading-relaxed font-light">
-                         Sending you an absolute shield against any bad vibes, negative advice, and annoying guys like Archi! Make sure you learn to say "No" to idiot people like Prassun. Your cozy bookstore reading sessions and peaceful space are strictly sacred, period.
+                         Have an absolute shield against any bad vibes, negative advice, and annoying guys like Archi! Make sure you learn to say "No" to idiot people like Prassun. And make sure your cozy reading and journaling sessions always brighten you up!
                        </p>
                     </div>
                     <div className="mt-6 text-[10px] sm:text-xs font-mono text-rose-300/60 uppercase tracking-widest font-semibold flex items-center gap-1.5">
@@ -690,7 +695,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                       </div>
                       <h4 className="serif-display text-lg text-white font-semibold mb-2">Sweet treats & spicy food!</h4>
                       <p className="font-sans text-stone-200/90 text-xs sm:text-sm leading-relaxed font-light">
-                        Wishing you the absolute ultimate food paradise! I hope you feast on delicious, heavenly sweet treats and then dive into some seriously hot chilli-styled foods like spicy momos! Enjoy the crazy flavor combinations today!
+                        Wishing you the absolute ultimate food paradise! I hope you feast on delicious, heavenly sweet treats and then dive into some seriously hot chilli-styled foods! Enjoy the crazy flavor combinations today in your dreams (and IRL too 😉)!
                       </p>
                     </div>
                     <div className="mt-6 text-[10px] sm:text-xs font-mono text-amber-300/60 uppercase tracking-widest font-semibold flex items-center gap-1.5">
@@ -773,7 +778,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -30, scale: 0.98 }}
                         transition={{ duration: 0.6, type: 'spring', stiffness: 100, damping: 15 }}
-                        className="w-full max-w-2xl mx-auto bg-gradient-to-br from-[#1c130d]/98 to-[#110a06]/98 border-2 border-double border-amber-500/35 shadow-[0_25px_65px_rgba(0,0,0,0.75)] rounded-[2.2rem] p-6 sm:p-10 relative overflow-hidden"
+                        className="w-full max-w-2xl mx-auto bg-gradient-to-br from-[#1c130d]/98 to-[#110a06]/98 border-2 border-double border-amber-500/35 shadow-[0_25px_65px_rgba(0,0,0,0.75)] rounded-[2.2rem] p-4 sm:p-8 relative overflow-hidden"
                         id="opened-friendship-letter-frame"
                       >
                         {/* Elegant background tint */}
@@ -788,31 +793,40 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                         {/* Outer decorative line inset */}
                         <div className="absolute inset-1.5 border border-amber-500/5 rounded-[1.9rem] pointer-events-none" />
 
-                        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-magic uppercase tracking-[0.15em] text-amber-200 border border-amber-500/20 px-2.5 py-1 rounded-md bg-amber-500/5 z-20 whitespace-nowrap">
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-magic uppercase tracking-[0.15em] text-amber-200 border border-amber-500/20 px-2 py-1 rounded-md bg-amber-500/5 z-20 whitespace-nowrap">
                           ✦ Sealed with Magic ✦
                         </div>
 
                         {/* Letter Content */}
-                        <div className="relative z-10">
+                        <div className="relative z-10 pb-12">
                           {/* Letter Header */}
-                          <div className="flex items-center gap-3.5 mb-6 border-b border-white/10 pb-4">
-                            <Sparkles className="w-5 h-5 text-amber-300 animate-pulse shrink-0" />
+                          <div className="flex items-center gap-3 mb-4 border-b border-white/10 pb-3">
+                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse shrink-0" />
                             <div>
-                              <h4 className="font-magic text-base text-white font-bold tracking-wide">From your idiot friend</h4>
-                              <p className="font-magic text-[9px] text-stone-300 tracking-widest uppercase">May 30, 2026 • cozy evening</p>
+                              <h4 className="font-magic text-sm sm:text-base text-white font-bold tracking-wide">From your idiot friend</h4>
+                              <p className="font-magic text-[8px] sm:text-[9px] text-stone-300 tracking-widest uppercase">May 30, 2026 • cozy evening</p>
                             </div>
                           </div>
 
                           {/* Beautiful Hand-written Text container */}
-                          <div className="serif-display text-lg sm:text-xl lg:text-2xl text-stone-200 leading-relaxed space-y-4 font-light py-2">
+                          <div className="serif-display text-base sm:text-lg lg:text-xl text-stone-200 leading-relaxed space-y-3 sm:space-y-4 font-light py-2">
                             <p className="italic">
                               "U are the best friend one could imagine to have, although u are quite an idiot sometimes. Sometime u can be a cow, sometime a super duper girl. But u are who u are!"
                             </p>
                             <p className="italic">
                               "Follow what u want and don't get another idiot guy like Archi... Hehehehhe..."
                             </p>
-                            <p className="font-magic italic text-right text-amber-300 font-bold mt-8 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                              "— Well, thank u for being my friend goru! :)"
+                            <p className="italic">
+                              "Meeting you has changed at least how I travelled and spend my time in college... Well, I am joking, u really make my days fun."
+                            </p>
+                            <p className="italic">
+                              "Well, treat yourself to some fantastic food although u are celebrating your birthday for last 2 weeks."
+                            </p>
+                            <p className="italic">
+                              "And don't sweat about the gifts, and again happy birthday Torshita."
+                            </p>
+                            <p className="italic">
+                              "P.S. I dont have much to say, or better to say can't think of anything else to write in this letter. AHHH, just have fun and study for the PCA2 and CA2 also.... HHEHEHHE. Kabieee."
                             </p>
                           </div>
                         </div>
@@ -823,95 +837,99 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
               ) : null}
 
                 {/* Card 5: Unlimited Sheep Farm Context */}
-                <motion.div 
-                  whileHover={{ y: -4 }}
-                  className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all border border-purple-500/15 hover:border-purple-500/30 shadow-lg relative overflow-hidden w-full max-w-2xl mx-auto mt-8"
-                >
-                  <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-purple-500/5 blur-xl" />
-                  <div>
-                    <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center mb-6 text-purple-300">
-                      <svg className="w-8 h-8 text-purple-200" viewBox="0 0 100 100" fill="currentColor">
-                        <path d="M 30,50 C 20,50 20,35 30,35 C 30,20 45,20 50,30 C 55,15 70,20 70,30 C 80,30 80,45 70,45 C 80,55 75,70 65,65 C 60,75 45,75 40,65 C 25,70 20,55 30,50 Z" fill="#ffffff" />
-                        <rect x="40" y="38" width="20" height="24" rx="10" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
-                        <ellipse cx="36" cy="42" rx="6" ry="3" fill="#f8fafc" transform="rotate(-15 36 42)" />
-                        <ellipse cx="64" cy="42" rx="6" ry="3" fill="#f8fafc" transform="rotate(15 64 42)" />
-                        <circle cx="46" cy="48" r="2" fill="#1e293b" />
-                        <circle cx="54" cy="48" r="2" fill="#1e293b" />
-                        <circle cx="43" cy="52" r="2.5" fill="#fda4af" opacity="0.8" />
-                        <circle cx="57" cy="52" r="2.5" fill="#fda4af" opacity="0.8" />
-                        <rect x="42" y="66" width="4" height="10" rx="2" fill="#e2e8f0" />
-                        <rect x="54" y="66" width="4" height="10" rx="2" fill="#e2e8f0" />
-                      </svg>
+                {spiritFinished && (
+                  <motion.div 
+                    whileHover={{ y: -4 }}
+                    className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all border border-purple-500/15 hover:border-purple-500/30 shadow-lg relative overflow-hidden w-full max-w-2xl mx-auto mt-8"
+                  >
+                    <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-purple-500/5 blur-xl" />
+                    <div>
+                      <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-center mb-6 text-purple-300">
+                        <svg className="w-8 h-8 text-purple-200" viewBox="0 0 100 100" fill="currentColor">
+                          <path d="M 30,50 C 20,50 20,35 30,35 C 30,20 45,20 50,30 C 55,15 70,20 70,30 C 80,30 80,45 70,45 C 80,55 75,70 65,65 C 60,75 45,75 40,65 C 25,70 20,55 30,50 Z" fill="#ffffff" />
+                          <rect x="40" y="38" width="20" height="24" rx="10" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
+                          <ellipse cx="36" cy="42" rx="6" ry="3" fill="#f8fafc" transform="rotate(-15 36 42)" />
+                          <ellipse cx="64" cy="42" rx="6" ry="3" fill="#f8fafc" transform="rotate(15 64 42)" />
+                          <circle cx="46" cy="48" r="2" fill="#1e293b" />
+                          <circle cx="54" cy="48" r="2" fill="#1e293b" />
+                          <circle cx="43" cy="52" r="2.5" fill="#fda4af" opacity="0.8" />
+                          <circle cx="57" cy="52" r="2.5" fill="#fda4af" opacity="0.8" />
+                          <rect x="42" y="66" width="4" height="10" rx="2" fill="#e2e8f0" />
+                          <rect x="54" y="66" width="4" height="10" rx="2" fill="#e2e8f0" />
+                        </svg>
+                      </div>
+                      <h4 className="font-magic text-lg text-white font-bold tracking-wide mb-2">YOUR COZY SHEEP SANCTUARY!</h4>
+                      <p className="font-sans text-stone-200/90 text-xs sm:text-sm leading-relaxed font-light">
+                        Since u are a sheep or what u like as per me, i have given u a sheepy suprise below. Have fun.....
+                      </p>
                     </div>
-                    <h4 className="font-magic text-lg text-white font-bold tracking-wide mb-2">YOUR COZY SHEEP SANCTUARY! 🐑</h4>
-                    <p className="font-sans text-stone-200/90 text-xs sm:text-sm leading-relaxed font-light">
-                      Since you are a cute little sheep at heart and absolutely love them, you have your very own unlimited sheep farm! Click the little surprise button at the bottom to release a stampede of woolly, bouncing sheep across the screen, feed them, or tickle them as much as you like!
-                    </p>
-                  </div>
-                  <div className="mt-6 text-[10px] sm:text-xs font-mono text-purple-300/60 uppercase tracking-widest font-semibold flex items-center gap-1.5">
-                    <span>• unlimited sheep farm active</span>
-                  </div>
-                </motion.div>
+                    <div className="mt-6 text-[10px] sm:text-xs font-mono text-purple-300/60 uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                      <span>• didn't turn out how i wanted due to time constraints</span>
+                    </div>
+                  </motion.div>
+                )}
               </div>
           </motion.div>
         )}
       </div>
 
       {/* 3. Bottom Text "happy beith torsites" & Surprise Button */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.8 }}
-        className="mt-20 text-center flex flex-col items-center space-y-8 z-20 pt-8 w-full max-w-xl relative"
-        id="prank-trigger-lobby"
-      >
-        {/* Playful greeting divider style */}
-        <div className="flex items-center space-x-4 opacity-75">
-          <div className="h-[1px] w-12 sm:w-24 bg-white/30"></div>
-          <span className="font-magic text-[11px] sm:text-xs tracking-[0.25em] uppercase font-bold text-amber-200">
-            happy beith torsites
-          </span>
-          <div className="h-[1px] w-12 sm:w-24 bg-white/30"></div>
-        </div>
+      {spiritFinished && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.8 }}
+          className="mt-20 text-center flex flex-col items-center space-y-8 z-20 pt-8 w-full max-w-xl relative"
+          id="prank-trigger-lobby"
+        >
+          {/* Playful greeting divider style */}
+          <div className="flex items-center space-x-4 opacity-75">
+            <div className="h-[1px] w-12 sm:w-24 bg-white/30"></div>
+            <span className="font-magic text-[11px] sm:text-xs tracking-[0.25em] uppercase font-bold text-amber-200">
+              happy beith torsites
+            </span>
+            <div className="h-[1px] w-12 sm:w-24 bg-white/30"></div>
+          </div>
 
-        {/* Surprise Button Triggering Sheep Prank */}
-        <div className="relative group">
-          {envelopeOpened && (
-            <div className="absolute inset-0 bg-white opacity-8 rounded-full blur-xl group-hover:opacity-15 transition-all duration-300 pointer-events-none" />
-          )}
-          
-          <motion.button
-            whileHover={envelopeOpened ? { scale: 1.05 } : {}}
-            whileTap={envelopeOpened ? { scale: 0.96 } : {}}
-            onClick={envelopeOpened ? onTriggerPrank : undefined}
-            disabled={!envelopeOpened}
-            className={`relative px-10 py-5 font-semibold rounded-full tracking-widest transition-all duration-300 flex items-center gap-3 ${
-              envelopeOpened
-                ? "bg-white text-black hover:scale-105 shadow-[0_10px_35px_rgba(255,255,255,0.12)] cursor-pointer"
-                : "bg-zinc-800/80 text-stone-500 border border-stone-700/40 cursor-not-allowed opacity-45 shadow-none"
-            }`}
-            id="btn-little-surprise"
-          >
-            {envelopeOpened ? (
-              <>
-                <span className="font-magic font-extrabold text-xs sm:text-sm tracking-widest uppercase">LITTLE SUPRICE FOR U 🎁</span>
-                
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              </>
-            ) : (
-              <>
-                <span className="font-magic font-extrabold text-xs sm:text-sm tracking-widest uppercase">SURPRISE LOCKED 🔒</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5.5 5.5 0 0 1 10 0v4" />
-                </svg>
-              </>
+          {/* Surprise Button Triggering Sheep Prank */}
+          <div className="relative group">
+            {envelopeOpened && (
+              <div className="absolute inset-0 bg-white opacity-8 rounded-full blur-xl group-hover:opacity-15 transition-all duration-300 pointer-events-none" />
             )}
-          </motion.button>
-        </div>
-      </motion.div>
+            
+            <motion.button
+              whileHover={envelopeOpened ? { scale: 1.05 } : {}}
+              whileTap={envelopeOpened ? { scale: 0.96 } : {}}
+              onClick={envelopeOpened ? onTriggerPrank : undefined}
+              disabled={!envelopeOpened}
+              className={`relative px-10 py-5 font-semibold rounded-full tracking-widest transition-all duration-300 flex items-center gap-3 ${
+                envelopeOpened
+                  ? "bg-white text-black hover:scale-105 shadow-[0_10px_35px_rgba(255,255,255,0.12)] cursor-pointer"
+                  : "bg-zinc-800/80 text-stone-500 border border-stone-700/40 cursor-not-allowed opacity-45 shadow-none"
+              }`}
+              id="btn-little-surprise"
+            >
+              {envelopeOpened ? (
+                <>
+                  <span className="font-magic font-extrabold text-xs sm:text-sm tracking-widest uppercase">LITTLE SUPRICE FOR U 🎁</span>
+                  
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </>
+              ) : (
+                <>
+                  <span className="font-magic font-extrabold text-xs sm:text-sm tracking-widest uppercase">SURPRISE LOCKED 🔒</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5.5 5.5 0 0 1 10 0v4" />
+                  </svg>
+                </>
+              )}
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

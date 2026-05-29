@@ -69,6 +69,26 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   .animate-sway {
     animation: sway 8s ease-in-out infinite;
   }
+  
+  .animate-text-shimmer {
+    background: linear-gradient(
+      90deg,
+      #fef08a 0%,
+      #f59e0b 25%,
+      #fef08a 50%,
+      #f59e0b 75%,
+      #fef08a 100%
+    );
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShimmer 3s linear infinite;
+  }
+
+  .animate-neon-glow {
+    animation: neonGlow 2s ease-in-out infinite alternate;
+  }
 }
 
 @keyframes float {
@@ -101,6 +121,32 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   }
   75% {
     transform: rotate(-90deg);
+  }
+}
+
+@keyframes textShimmer {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes neonGlow {
+  0% {
+    text-shadow:
+      0 0 2px #fef08a,
+      0 0 4px #fef08a,
+      0 0 6px #f59e0b,
+      0 0 8px #f59e0b;
+  }
+  100% {
+    text-shadow:
+      0 0 4px #fef08a,
+      0 0 6px #fef08a,
+      0 0 8px #f59e0b,
+      0 0 10px #f59e0b;
   }
 }
 

@@ -7,6 +7,12 @@
 // This is initialized lazily after user interaction to obey browser policies.
 
 let audioCtx: AudioContext | null = null;
+let ambientOsc1: OscillatorNode | null = null;
+let ambientOsc2: OscillatorNode | null = null;
+let ambientGain1: GainNode | null = null;
+let ambientGain2: GainNode | null = null;
+let ambientMasterGain: GainNode | null = null;
+let isAmbientPlaying = false;
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
@@ -17,6 +23,89 @@ function getAudioContext(): AudioContext {
     audioCtx.resume();
   }
   return audioCtx;
+}
+
+/**
+ * Starts a continuous low-volume ambient sweet sound (gentle drones + soft tremolo)
+ */
+export function startAmbientSound() {
+  try {
+    if (isAmbientPlaying) return;
+    
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+
+    // Create two detuned oscillators for a warm, sweet ambient drone
+    ambientOsc1 = ctx.createOscillator();
+    ambientOsc2 = ctx.createOscillator();
+    
+    ambientOsc1.type = 'sine';
+    ambientOsc2.type = 'sine';
+    
+    // Sweet, warm frequencies (C3 and E3, perfect fifth apart for harmony)
+    ambientOsc1.frequency.setValueAtTime(130.81, now); // C3
+    ambientOsc2.frequency.setValueAtTime(164.81, now); // E3
+    ambientOsc2.detune.setValueAtTime(5, now); // Slight detune for warmth
+    
+    // Create gain nodes
+    ambientGain1 = ctx.createGain();
+    ambientGain2 = ctx.createGain();
+    ambientMasterGain = ctx.createGain();
+    
+    // Very low volume
+    ambientMasterGain.gain.setValueAtTime(0.03, now);
+    
+    // Connect oscillators
+    ambientOsc1.connect(ambientGain1);
+    ambientGain1.connect(ambientMasterGain);
+    ambientOsc2.connect(ambientGain2);
+    ambientGain2.connect(ambientMasterGain);
+    ambientMasterGain.connect(ctx.destination);
+    
+    // Add gentle tremolo (slow amplitude modulation)
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.setValueAtTime(0.5, now); // 0.5 Hz = 2-second cycle
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.setValueAtTime(0.15, now); // Modulation depth
+    lfo.connect(lfoGain);
+    lfoGain.connect(ambientMasterGain.gain);
+    
+    // Start everything
+    ambientOsc1.start(now);
+    ambientOsc2.start(now);
+    lfo.start(now);
+    
+    isAmbientPlaying = true;
+  } catch (error) {
+    console.warn('Failed to start ambient sound:', error);
+  }
+}
+
+/**
+ * Pauses the ambient sound (lowers volume smoothly)
+ */
+export function pauseAmbientSound() {
+  if (!isAmbientPlaying || !ambientMasterGain || !audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    ambientMasterGain.gain.linearRampToValueAtTime(0.001, now + 0.5);
+  } catch (error) {
+    console.warn('Failed to pause ambient sound:', error);
+  }
+}
+
+/**
+ * Resumes the ambient sound (raises volume smoothly)
+ */
+export function resumeAmbientSound() {
+  if (!isAmbientPlaying || !ambientMasterGain || !audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    ambientMasterGain.gain.linearRampToValueAtTime(0.03, now + 0.5);
+  } catch (error) {
+    console.warn('Failed to resume ambient sound:', error);
+  }
 }
 
 /**
