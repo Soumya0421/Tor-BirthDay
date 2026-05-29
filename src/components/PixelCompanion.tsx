@@ -305,9 +305,18 @@ export default function PixelCompanion({
     }
   }, [tick, isDancing, isBowing, bowProgress, isExploded, kittyX, kittyY, bowHoldTime]);
 
-  // Start the show!
-  const startTheShow = () => {
+  // Start the show! - with proper mobile audio handling
+  const startTheShow = async () => {
     if (isSinging || isExploded) return;
+    
+    // First: resume audio context (super important for mobile!)
+    try {
+      const ctx = getSharedAudioCtx();
+      await ctx.resume();
+    } catch (e) {
+      console.log('Audio context resume failed:', e);
+    }
+    
     setIsSinging(true);
     setIsDancing(true);
     
@@ -335,13 +344,15 @@ export default function PixelCompanion({
         osc.type = 'sine';
         osc.frequency.setValueAtTime(syllable.freq, now);
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.25, now + 0.04);
+        gain.gain.linearRampToValueAtTime(0.35, now + 0.04); // slightly louder on mobile
         gain.gain.exponentialRampToValueAtTime(0.001, now + syllable.duration);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
         osc.stop(now + syllable.duration);
-      } catch (e) {}
+      } catch (e) {
+        console.log('Note play failed:', e);
+      }
 
       noteIndex++;
       setTimeout(playNote, (syllable.duration + syllable.pause) * 1000);
@@ -404,17 +415,17 @@ export default function PixelCompanion({
         </div>
       )}
 
-      {/* Clickable area over the kitty */}
+      {/* Clickable area over the kitty - big and easy to tap on mobile! */}
       {hasAppeared && !isExploded && (
         <button
           type="button"
           onClick={startTheShow}
-          className="absolute pointer-events-auto cursor-pointer rounded-full bg-transparent hover:bg-orange-500/10 active:scale-95 transition"
+          className="absolute pointer-events-auto cursor-pointer rounded-full bg-transparent hover:bg-orange-500/10 active:scale-95 transition z-50"
           style={{
-            left: kittyX - spriteW / 2 - 30,
-            top: kittyY - spriteH / 2 - 30,
-            width: spriteW + 60,
-            height: spriteH + 60
+            left: kittyX - spriteW / 2 - 60,
+            top: kittyY - spriteH / 2 - 60,
+            width: spriteW + 120,
+            height: spriteH + 120
           }}
         />
       )}
