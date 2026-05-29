@@ -17,7 +17,7 @@ import CountdownWish from './components/CountdownWish';
 import SheepPrank from './components/SheepPrank';
 import { AnimatePresence, motion } from 'motion/react';
 import { Sparkles, Music, Volume2, ShieldAlert } from 'lucide-react';
-import { startAmbientSound } from './utils/audio';
+import { startAmbientSound, initializeAudioOnFirstInteraction } from './utils/audio';
 
 export default function App() {
   const [sheepPrankActive, setSheepPrankActive] = useState(false);
@@ -55,6 +55,7 @@ export default function App() {
   // Start ambient sound on first user interaction
   useEffect(() => {
     const startAmbient = () => {
+      initializeAudioOnFirstInteraction();
       if (!ambientStarted) {
         startAmbientSound();
         setAmbientStarted(true);

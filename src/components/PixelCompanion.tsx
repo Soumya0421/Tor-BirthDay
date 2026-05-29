@@ -4,20 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { pauseAmbientSound, resumeAmbientSound } from '../utils/audio';
-
-let sharedAudioCtx: AudioContext | null = null;
-function getSharedAudioCtx(): AudioContext {
-  if (!sharedAudioCtx) {
-    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
-    if (!Ctor) throw new Error('Web Audio not supported');
-    sharedAudioCtx = new Ctor();
-  }
-  if (sharedAudioCtx.state === 'suspended') {
-    sharedAudioCtx.resume();
-  }
-  return sharedAudioCtx;
-}
+import { pauseAmbientSound, resumeAmbientSound, playBirthdaySong } from '../utils/audio';
 
 const _ = '';
 const W = '#ffffff';
@@ -61,42 +48,6 @@ const KITTY_PIXELS_DOWN: string[][] = [
   [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]
 ];
 
-interface AudioSyllable {
-  note: string;
-  freq: number;
-  duration: number;
-  syllable: string;
-  pause: number;
-}
-
-const SWEET_HAPPY_BIRTHDAY: AudioSyllable[] = [
-  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
-  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'py ', pause: 0.05 },
-  { note: 'A4', freq: 440.00, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
-  { note: 'G4', freq: 392.00, duration: 0.55, syllable: 'day ', pause: 0.05 },
-  { note: 'C5', freq: 523.25, duration: 0.55, syllable: 'to ', pause: 0.05 },
-  { note: 'B4', freq: 493.88, duration: 1.10, syllable: 'you! 💖', pause: 0.35 },
-  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
-  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'py ', pause: 0.05 },
-  { note: 'A4', freq: 440.00, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
-  { note: 'G4', freq: 392.00, duration: 0.55, syllable: 'day ', pause: 0.05 },
-  { note: 'D5', freq: 587.33, duration: 0.55, syllable: 'to ', pause: 0.05 },
-  { note: 'C5', freq: 523.25, duration: 1.10, syllable: 'you! 🌟', pause: 0.35 },
-  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
-  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'py ', pause: 0.05 },
-  { note: 'G5', freq: 783.99, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
-  { note: 'E5', freq: 659.25, duration: 0.55, syllable: 'day ', pause: 0.05 },
-  { note: 'C5', freq: 523.25, duration: 0.55, syllable: 'dear ', pause: 0.05 },
-  { note: 'B4', freq: 493.88, duration: 0.55, syllable: 'Tor-', pause: 0.05 },
-  { note: 'A4', freq: 440.00, duration: 0.85, syllable: 'shi-ta! 👑', pause: 0.35 },
-  { note: 'F5', freq: 698.46, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
-  { note: 'F5', freq: 698.46, duration: 0.28, syllable: 'py ', pause: 0.05 },
-  { note: 'E5', freq: 659.25, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
-  { note: 'C5', freq: 523.25, duration: 0.55, syllable: 'day ', pause: 0.05 },
-  { note: 'D5', freq: 587.33, duration: 0.55, syllable: 'to ', pause: 0.05 },
-  { note: 'C5', freq: 523.25, duration: 1.50, syllable: 'YOU! 🎉', pause: 0.80 }
-];
-
 interface SandParticle {
   x: number;
   y: number;
@@ -111,28 +62,28 @@ export default function PixelCompanion({
   letterUnlocked, 
   onComplete 
 }: { 
-  letterUnlocked: boolean, 
-  onComplete?: () => void 
+  letterUnlocked: boolean; 
+  onComplete?: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sandParticlesRef = useRef<SandParticle[]>([]);
   const pixelPositionsRef = useRef<{x: number, y: number, color: string}[]>([]);
+  const tickRef = useRef(0);
+  const frameIndexRef = useRef(0);
+  const bowHoldTimeRef = useRef(0);
+  const bowProgressRef = useRef(0);
   
   const [hasAppeared, setHasAppeared] = useState(false);
   const [isSinging, setIsSinging] = useState(false);
   const [currentSyllable, setCurrentSyllable] = useState('');
   const [isExploded, setIsExploded] = useState(false);
   const [textDisintegrated, setTextDisintegrated] = useState(false);
-  const [kittyY, setKittyY] = useState<number>(0);
-  const [frameIndex, setFrameIndex] = useState(0);
-  const [tick, setTick] = useState(0);
+  const [kittyY, setKittyY] = useState(0);
   const [isDancing, setIsDancing] = useState(false);
   const [isBowing, setIsBowing] = useState(false);
-  const [bowProgress, setBowProgress] = useState(0);
   const [spriteSize, setSpriteSize] = useState(0);
   const [kittyX, setKittyX] = useState(0);
   const [spiritVisible, setSpiritVisible] = useState(true);
-  const [bowHoldTime, setBowHoldTime] = useState(0);
 
   // Initialize position and make it visible!
   useEffect(() => {
@@ -175,8 +126,62 @@ export default function PixelCompanion({
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Update tick for animation
-      setTick(prev => prev + 1);
+      // Update tick and frame index
+      tickRef.current += 1;
+      if (tickRef.current % (isDancing ? 8 : 12) === 0) {
+        frameIndexRef.current = frameIndexRef.current === 0 ? 1 : 0;
+      }
+
+      // Handle bow progress
+      if (isBowing && bowProgressRef.current < 1) {
+        bowProgressRef.current = Math.min(1, bowProgressRef.current + 0.02);
+      } else if (isBowing && bowProgressRef.current >= 1) {
+        bowHoldTimeRef.current += 1;
+        
+        // Hold the bow for about 1 second (60 ticks) then explode into sand
+        if (bowHoldTimeRef.current > 60 && !isExploded) {
+          setIsExploded(true);
+          setSpiritVisible(false);
+          if (onComplete) {
+            onComplete();
+          }
+          
+          // Sand colors
+          const sandColors = ['#F5DEB3', '#DEB887', '#D2B48C', '#C4A35A', '#B8860B', '#CD853F', '#FFDEAD', '#F4A460'];
+          
+          // Create sand particles from all the stored pixel positions
+          pixelPositionsRef.current.forEach((pos) => {
+            for (let i = 0; i < 3; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = Math.random() * 8 + 1;
+              sandParticlesRef.current.push({
+                x: pos.x,
+                y: pos.y,
+                vx: Math.cos(angle) * speed + (Math.random() * 2 - 1),
+                vy: Math.sin(angle) * speed - 2,
+                size: Math.random() * 4 + 1,
+                color: pos.color || sandColors[Math.floor(Math.random() * sandColors.length)],
+                life: 1
+              });
+            }
+          });
+          
+          // Add extra sand particles for effect
+          for (let i = 0; i < 100; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 10 + 2;
+            sandParticlesRef.current.push({
+              x: kittyX,
+              y: kittyY,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed - 4,
+              size: Math.random() * 5 + 1,
+              color: sandColors[Math.floor(Math.random() * sandColors.length)],
+              life: 1
+            });
+          }
+        }
+      }
 
       // Update sand particles
       sandParticlesRef.current = sandParticlesRef.current.filter((part, idx) => {
@@ -201,7 +206,7 @@ export default function PixelCompanion({
 
       // Draw sprite if visible
       if (hasAppeared && spiritVisible) {
-        const sprite = frameIndex === 0 ? KITTY_PIXELS_UP : KITTY_PIXELS_DOWN;
+        const sprite = frameIndexRef.current === 0 ? KITTY_PIXELS_UP : KITTY_PIXELS_DOWN;
         const spriteW = sprite[0].length * spriteSize;
         const spriteH = sprite.length * spriteSize;
 
@@ -213,10 +218,10 @@ export default function PixelCompanion({
         
         if (isBowing) {
           // Bow down: scale down vertically and rotate forward
-          ctx.scale(1 - bowProgress * 0.2, 1 - bowProgress * 0.4);
-          ctx.rotate(bowProgress * 0.6);
+          ctx.scale(1 - bowProgressRef.current * 0.2, 1 - bowProgressRef.current * 0.4);
+          ctx.rotate(bowProgressRef.current * 0.6);
         } else if (isDancing) {
-          ctx.rotate(Math.sin(tick * 0.15) * 0.15);
+          ctx.rotate(Math.sin(tickRef.current * 0.15) * 0.15);
         }
         
         ctx.translate(-spriteW / 2, -spriteH / 2);
@@ -246,124 +251,33 @@ export default function PixelCompanion({
     };
 
     animate();
-  }, [hasAppeared, frameIndex, kittyX, kittyY, isDancing, isBowing, bowProgress, tick, spriteSize, spiritVisible]);
+  }, [hasAppeared, kittyX, kittyY, isDancing, isBowing, spriteSize, spiritVisible, isExploded, onComplete]);
 
-  // Update frame index and bow progress
-  useEffect(() => {
-    if (tick % (isDancing ? 8 : 12) === 0) {
-      setFrameIndex(prev => prev === 0 ? 1 : 0);
-    }
-
-    if (isBowing && bowProgress < 1) {
-      setBowProgress(prev => Math.min(1, prev + 0.02));
-    } else if (isBowing && bowProgress >= 1) {
-      setBowHoldTime(prev => prev + 1);
-      
-      // Hold the bow for about 1 second (60 ticks) then explode into sand
-      if (bowHoldTime > 60 && !isExploded) {
-        setIsExploded(true);
-        setSpiritVisible(false);
-        if (onComplete) {
-          onComplete();
-        }
-        
-        // Sand colors
-        const sandColors = ['#F5DEB3', '#DEB887', '#D2B48C', '#C4A35A', '#B8860B', '#CD853F', '#FFDEAD', '#F4A460'];
-        
-        // Create sand particles from all the stored pixel positions
-        pixelPositionsRef.current.forEach((pos) => {
-          for (let i = 0; i < 3; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 8 + 1;
-            sandParticlesRef.current.push({
-              x: pos.x,
-              y: pos.y,
-              vx: Math.cos(angle) * speed + (Math.random() * 2 - 1),
-              vy: Math.sin(angle) * speed - 2,
-              size: Math.random() * 4 + 1,
-              color: pos.color || sandColors[Math.floor(Math.random() * sandColors.length)],
-              life: 1
-            });
-          }
-        });
-        
-        // Add extra sand particles for effect
-        for (let i = 0; i < 100; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const speed = Math.random() * 10 + 2;
-          sandParticlesRef.current.push({
-            x: kittyX,
-            y: kittyY,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 4,
-            size: Math.random() * 5 + 1,
-            color: sandColors[Math.floor(Math.random() * sandColors.length)],
-            life: 1
-          });
-        }
-      }
-    }
-  }, [tick, isDancing, isBowing, bowProgress, isExploded, kittyX, kittyY, bowHoldTime]);
-
-  // Start the show! - with proper mobile audio handling
-  const startTheShow = async () => {
+  // Start the show! - 100% mobile safe!
+  const startTheShow = () => {
     if (isSinging || isExploded) return;
-    
-    // First: resume audio context (super important for mobile!)
-    try {
-      const ctx = getSharedAudioCtx();
-      await ctx.resume();
-    } catch (e) {
-      console.log('Audio context resume failed:', e);
-    }
-    
+
     setIsSinging(true);
     setIsDancing(true);
     
-    // Pause ambient sound when singing starts
+    // Pause ambient sound
     pauseAmbientSound();
 
-    let noteIndex = 0;
-    const playNote = () => {
-      if (noteIndex >= SWEET_HAPPY_BIRTHDAY.length) {
+    // Play birthday song with new function!
+    playBirthdaySong(
+      (syllable) => setCurrentSyllable(syllable),
+      () => {
         setIsDancing(false);
         setIsBowing(true);
-        // Resume ambient sound after singing is done
+        // Resume ambient sound
         setTimeout(resumeAmbientSound, 1000);
-        return;
       }
-
-      const syllable = SWEET_HAPPY_BIRTHDAY[noteIndex];
-      setCurrentSyllable(syllable.syllable);
-
-      try {
-        const ctx = getSharedAudioCtx();
-        const now = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(syllable.freq, now);
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.35, now + 0.04); // slightly louder on mobile
-        gain.gain.exponentialRampToValueAtTime(0.001, now + syllable.duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + syllable.duration);
-      } catch (e) {
-        console.log('Note play failed:', e);
-      }
-
-      noteIndex++;
-      setTimeout(playNote, (syllable.duration + syllable.pause) * 1000);
-    };
-
-    playNote();
+    );
   };
 
   // Get sprite dimensions for click area
   const getSpriteDims = () => {
-    const sprite = frameIndex === 0 ? KITTY_PIXELS_UP : KITTY_PIXELS_DOWN;
+    const sprite = frameIndexRef.current === 0 ? KITTY_PIXELS_UP : KITTY_PIXELS_DOWN;
     const width = sprite[0].length * spriteSize;
     const height = sprite.length * spriteSize;
     return { width, height };

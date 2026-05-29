@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Dynamic Web Audio Synth for sheep bleat and magical interactive chimes.
-// This is initialized lazily after user interaction to obey browser policies.
-
+// Single global AudioContext for ALL sounds!
 let audioCtx: AudioContext | null = null;
+let audioPrimed = false;
+
+// Ambient sound variables
 let ambientOsc1: OscillatorNode | null = null;
 let ambientOsc2: OscillatorNode | null = null;
 let ambientGain1: GainNode | null = null;
@@ -14,20 +15,142 @@ let ambientGain2: GainNode | null = null;
 let ambientMasterGain: GainNode | null = null;
 let isAmbientPlaying = false;
 
-function getAudioContext(): AudioContext {
+/**
+ * Get or create the single global AudioContext, and PRIME IT on first call!
+ * MUST be called from a USER INTERACTION handler!
+ */
+export function getAudioContext(): AudioContext {
   if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctor) throw new Error('Web Audio not supported');
+    audioCtx = new Ctor();
   }
-  // Resume context if suspended (common in browsers until user gesture)
+
+  // ALWAYS try to resume and prime!
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+
+  // Prime with a completely silent sound the first time we get the context!
+  if (!audioPrimed) {
+    audioPrimed = true;
+    const now = audioCtx.currentTime;
+    const primeOsc = audioCtx.createOscillator();
+    const primeGain = audioCtx.createGain();
+    primeGain.gain.setValueAtTime(0.0001, now);
+    primeGain.gain.linearRampToValueAtTime(0, now + 0.01);
+    primeOsc.connect(primeGain);
+    primeGain.connect(audioCtx.destination);
+    primeOsc.start(now);
+    primeOsc.stop(now + 0.01);
+  }
+
   return audioCtx;
 }
 
 /**
- * Starts a continuous low-volume ambient sweet sound (gentle drones + soft tremolo)
+ * Initializes audio system on first user interaction anywhere!
+ * Call this ONCE from a top-level user event handler!
  */
+export function initializeAudioOnFirstInteraction() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'running') {
+      console.log('Audio system initialized and primed!');
+    }
+  } catch (e) {
+    console.warn('Failed to initialize audio:', e);
+  }
+}
+
+// --------------------------
+// BIRTHDAY SONG FUNCTIONALITY
+// --------------------------
+interface AudioSyllable {
+  note: string;
+  freq: number;
+  duration: number;
+  syllable: string;
+  pause: number;
+}
+
+const SWEET_HAPPY_BIRTHDAY: AudioSyllable[] = [
+  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
+  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'py ', pause: 0.05 },
+  { note: 'A4', freq: 440.00, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
+  { note: 'G4', freq: 392.00, duration: 0.55, syllable: 'day ', pause: 0.05 },
+  { note: 'C5', freq: 523.25, duration: 0.55, syllable: 'to ', pause: 0.05 },
+  { note: 'B4', freq: 493.88, duration: 1.10, syllable: 'you!', pause: 0.35 },
+  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
+  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'py ', pause: 0.05 },
+  { note: 'A4', freq: 440.00, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
+  { note: 'G4', freq: 392.00, duration: 0.55, syllable: 'day ', pause: 0.05 },
+  { note: 'D5', freq: 587.33, duration: 0.55, syllable: 'to ', pause: 0.05 },
+  { note: 'C5', freq: 523.25, duration: 1.10, syllable: 'you!', pause: 0.35 },
+  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
+  { note: 'G4', freq: 392.00, duration: 0.28, syllable: 'py ', pause: 0.05 },
+  { note: 'G5', freq: 783.99, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
+  { note: 'E5', freq: 659.25, duration: 0.55, syllable: 'day ', pause: 0.05 },
+  { note: 'C5', freq: 523.25, duration: 0.55, syllable: 'dear ', pause: 0.05 },
+  { note: 'B4', freq: 493.88, duration: 0.55, syllable: 'Tor-', pause: 0.05 },
+  { note: 'A4', freq: 440.00, duration: 0.85, syllable: 'shi-ta!', pause: 0.35 },
+  { note: 'F5', freq: 698.46, duration: 0.28, syllable: 'Hap-', pause: 0.05 },
+  { note: 'F5', freq: 698.46, duration: 0.28, syllable: 'py ', pause: 0.05 },
+  { note: 'E5', freq: 659.25, duration: 0.55, syllable: 'Birth-', pause: 0.05 },
+  { note: 'C5', freq: 523.25, duration: 0.55, syllable: 'day ', pause: 0.05 },
+  { note: 'D5', freq: 587.33, duration: 0.55, syllable: 'to ', pause: 0.05 },
+  { note: 'C5', freq: 523.25, duration: 1.50, syllable: 'YOU!', pause: 0.80 }
+];
+
+/**
+ * Plays the birthday song, calls updateSyllable for each syllable change, calls onComplete when done
+ */
+export function playBirthdaySong(
+  updateSyllable: (syllable: string) => void,
+  onComplete: () => void
+) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    let noteIndex = 0;
+
+    const playNote = () => {
+      if (noteIndex >= SWEET_HAPPY_BIRTHDAY.length) {
+        onComplete();
+        return;
+      }
+
+      const syllable = SWEET_HAPPY_BIRTHDAY[noteIndex];
+      updateSyllable(syllable.syllable);
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(syllable.freq, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.4, now + 0.02); // Quicker attack for mobile
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + syllable.duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + syllable.duration);
+
+      noteIndex++;
+      setTimeout(playNote, (syllable.duration + syllable.pause) * 1000);
+    };
+
+    playNote();
+  } catch (e) {
+    console.warn('Birthday song failed:', e);
+    onComplete();
+  }
+}
+
+// --------------------------
+// AMBIENT SOUND
+// --------------------------
 export function startAmbientSound() {
   try {
     if (isAmbientPlaying) return;
@@ -82,9 +205,6 @@ export function startAmbientSound() {
   }
 }
 
-/**
- * Pauses the ambient sound (lowers volume smoothly)
- */
 export function pauseAmbientSound() {
   if (!isAmbientPlaying || !ambientMasterGain || !audioCtx) return;
   try {
@@ -95,9 +215,6 @@ export function pauseAmbientSound() {
   }
 }
 
-/**
- * Resumes the ambient sound (raises volume smoothly)
- */
 export function resumeAmbientSound() {
   if (!isAmbientPlaying || !ambientMasterGain || !audioCtx) return;
   try {
@@ -108,21 +225,19 @@ export function resumeAmbientSound() {
   }
 }
 
-/**
- * Synthesizes an adorable, hilarious sheep "BAHH" bleat using Web Audio API oscillators.
- * Uses FM synthesis + formant filtering to achieve highly custom sounds (baby, normal, deep, funny).
- */
+// --------------------------
+// OTHER SOUNDS
+// --------------------------
 export function playSheepBleat(pitchType: 'baby' | 'standard' | 'deep' | 'derp' = 'standard') {
   try {
     const ctx = getAudioContext();
     const now = ctx.currentTime;
 
-    // Define pitch and durations based on request
-    let baseFreq = 160;   // General pitch of sheep bleat
-    let duration = 0.8;   // Length of the bleat
-    let vibratoSpeed = 8.5; // Wobble frequency
-    let vibratoDepth = 25;  // Wobble intensity (Hz)
-    let nasalCutoff = 1000; // Bandpass center frequency to mimic throat formant
+    let baseFreq = 160;
+    let duration = 0.8;
+    let vibratoSpeed = 8.5;
+    let vibratoDepth = 25;
+    let nasalCutoff = 1000;
 
     switch (pitchType) {
       case 'baby':
@@ -142,7 +257,7 @@ export function playSheepBleat(pitchType: 'baby' | 'standard' | 'deep' | 'derp' 
       case 'derp':
         baseFreq = 120 + Math.random() * 100;
         duration = 0.9;
-        vibratoSpeed = 14.0; // SUPER flutter
+        vibratoSpeed = 14.0;
         vibratoDepth = 50;
         nasalCutoff = 1100;
         break;
@@ -153,94 +268,70 @@ export function playSheepBleat(pitchType: 'baby' | 'standard' | 'deep' | 'derp' 
         break;
     }
 
-    // 1. Fundamental Oscillators (Sawtooth for raw vocal buzz, Triangle for body)
     const oscSaw = ctx.createOscillator();
     const oscTri = ctx.createOscillator();
     oscSaw.type = 'sawtooth';
     oscTri.type = 'triangle';
 
-    // Set frequencies
     oscSaw.frequency.setValueAtTime(baseFreq, now);
     oscTri.frequency.setValueAtTime(baseFreq, now);
-    
-    // Slighly detune them for lush/goofy chorusing
     oscSaw.detune.setValueAtTime(-8, now);
     oscTri.detune.setValueAtTime(8, now);
 
-    // Pitch slide downwards slightly over the course of the bleat
     oscSaw.frequency.exponentialRampToValueAtTime(baseFreq * 0.82, now + duration);
     oscTri.frequency.exponentialRampToValueAtTime(baseFreq * 0.82, now + duration);
 
-    // 2. Low Frequency Oscillator (LFO) for that fluttering sheep vocal chord wobble!
-    const lfo = ctx.createGain();
+    const lfoGain = ctx.createGain();
     const lfoOsc = ctx.createOscillator();
     lfoOsc.type = 'sine';
     lfoOsc.frequency.setValueAtTime(vibratoSpeed, now);
-    
-    // LFO Gain controls how wide the pitch bends
-    const lfoGain = ctx.createGain();
     lfoGain.gain.setValueAtTime(vibratoDepth, now);
 
-    // Connect LFO to pitch parameters of both oscillators
     lfoOsc.connect(lfoGain);
     lfoGain.connect(oscSaw.frequency);
     lfoGain.connect(oscTri.frequency);
 
-    // 3. Bandpass and Formant filters to give it the vocal nasal "Maaaa" or "Baaaa" quality
     const formantFilter1 = ctx.createBiquadFilter();
     formantFilter1.type = 'bandpass';
     formantFilter1.Q.setValueAtTime(4.0, now);
     formantFilter1.frequency.setValueAtTime(nasalCutoff, now);
-    // Let filter frequency sweep slightly
     formantFilter1.frequency.exponentialRampToValueAtTime(nasalCutoff * 0.75, now + duration);
 
-    // 4. Audio Envelope & Gain
     const oscGain = ctx.createGain();
-    // Fade in sheep mouth opening "b-" to "aaaa"
     oscGain.gain.setValueAtTime(0, now);
-    oscGain.gain.linearRampToValueAtTime(0.6, now + 0.08); // Quick attack
+    oscGain.gain.linearRampToValueAtTime(0.6, now + 0.08);
     
-    // Slight tremolo (amplitude flutter) using custom ramps
     const steps = 6;
     for (let i = 1; i <= steps; i++) {
       const time = now + 0.08 + (duration - 0.15) * (i / steps);
-      // alternate gain values to simulate trembling voice
       const gainVal = 0.45 + (i % 2 === 0 ? 0.15 : -0.15);
       oscGain.gain.linearRampToValueAtTime(gainVal, time);
     }
 
-    // Decay and release
     oscGain.gain.setValueAtTime(0.45, now + duration - 0.1);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, now + duration); // Soft tail
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-    // 5. Connect node graph
     oscSaw.connect(oscGain);
     oscTri.connect(oscGain);
     oscGain.connect(formantFilter1);
     
-    // Master volume control with a limiter to avoid earsplitting noise
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0.4, now);
     formantFilter1.connect(masterGain);
     masterGain.connect(ctx.destination);
 
-    // Start synthesis
     lfoOsc.start(now);
     oscSaw.start(now);
     oscTri.start(now);
 
-    // Stop and cleanup
     lfoOsc.stop(now + duration);
     oscSaw.stop(now + duration);
     oscTri.stop(now + duration);
   } catch (error) {
-    console.warn('Audio web context is blocked or unsupported on this system:', error);
+    console.warn('Sheep bleat failed:', error);
   }
 }
 
-/**
- * Plays a beautiful glass-like star sparkle sound for visual glitter interaction.
- */
 export function playStarSparkle() {
   try {
     const ctx = getAudioContext();
@@ -250,7 +341,6 @@ export function playStarSparkle() {
     const gain = ctx.createGain();
     
     osc.type = 'sine';
-    // Arpeggiating chime frequencies
     const randomFreqs = [1800, 2100, 2400, 2700, 3100];
     const freq = randomFreqs[Math.floor(Math.random() * randomFreqs.length)];
     
@@ -270,9 +360,6 @@ export function playStarSparkle() {
   }
 }
 
-/**
- * Plays a soft floral bubble "popper" sound for dropping flowers.
- */
 export function playFlowerPop() {
   try {
     const ctx = getAudioContext();
