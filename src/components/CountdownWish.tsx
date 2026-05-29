@@ -111,9 +111,8 @@ interface CountdownWishProps {
 }
 
 export default function CountdownWish({ onTriggerPrank, onLetterUnlock, spiritFinished }: CountdownWishProps) {
-  // Target birthday: tomorrow at midnight
-  const today = new Date();
-  const targetDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 0);
+  // Target birthday: hardcoded to May 30, 2026 at midnight
+  const targetDate = new Date(2026, 4, 30, 0, 0, 0);
 
   const [timeData, setTimeData] = useState({
     days: 0,
