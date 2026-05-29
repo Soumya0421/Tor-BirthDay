@@ -138,47 +138,12 @@ export default function PixelCompanion({
       } else if (isBowing && bowProgressRef.current >= 1) {
         bowHoldTimeRef.current += 1;
         
-        // Hold the bow for about 1 second (60 ticks) then explode into sand
+        // Hold the bow for about 1 second (60 ticks) then simply disappear
         if (bowHoldTimeRef.current > 60 && !isExploded) {
           setIsExploded(true);
           setSpiritVisible(false);
           if (onComplete) {
             onComplete();
-          }
-          
-          // Sand colors
-          const sandColors = ['#F5DEB3', '#DEB887', '#D2B48C', '#C4A35A', '#B8860B', '#CD853F', '#FFDEAD', '#F4A460'];
-          
-          // Create sand particles from all the stored pixel positions
-          pixelPositionsRef.current.forEach((pos) => {
-            for (let i = 0; i < 3; i++) {
-              const angle = Math.random() * Math.PI * 2;
-              const speed = Math.random() * 8 + 1;
-              sandParticlesRef.current.push({
-                x: pos.x,
-                y: pos.y,
-                vx: Math.cos(angle) * speed + (Math.random() * 2 - 1),
-                vy: Math.sin(angle) * speed - 2,
-                size: Math.random() * 4 + 1,
-                color: pos.color || sandColors[Math.floor(Math.random() * sandColors.length)],
-                life: 1
-              });
-            }
-          });
-          
-          // Add extra sand particles for effect
-          for (let i = 0; i < 100; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 10 + 2;
-            sandParticlesRef.current.push({
-              x: kittyX,
-              y: kittyY,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed - 4,
-              size: Math.random() * 5 + 1,
-              color: sandColors[Math.floor(Math.random() * sandColors.length)],
-              life: 1
-            });
           }
         }
       }
