@@ -3,9 +3,106 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Gift, Heart, Calendar, Clock, Volume2, Smile, Compass, Shield, Sun, Eye, ChevronRight, BookOpen, Coffee, Utensils, Book } from 'lucide-react';
+import { Sparkles, Gift, Heart, BookOpen, Coffee, Utensils, Book, Shield, Eye } from 'lucide-react';
+
+// Pixel art patterns for gifts
+const _ = '';
+const BOOK_PIXELS = [
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,'#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e',_,_],
+  [_,_,_,'#92400e','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#d97706','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#f59e0b','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#d97706','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#f59e0b','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#d97706','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#f59e0b','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#d97706','#fef3c7','#fef3c7','#fef3c7','#fef3c7','#ef4444','#ef4444','#ef4444','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#ef4444','#ef4444','#d97706','#92400e',_,_],
+  [_,_,_,'#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e','#92400e',_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]
+];
+
+const CUPCAKE_PIXELS = [
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,'#ef4444',_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,'#ef4444','#ef4444','#ef4444',_,_,_,_,_,_,_],
+  [_,_,_,_,_,'#22c55e','#ef4444','#ef4444','#ef4444',_,_,_,_,_,_,_],
+  [_,_,_,_,'#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a',_,_,_,_,_,_],
+  [_,_,_,'#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a',_,_,_,_,_],
+  [_,_,'#f472b6','#f472b6','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#fdf08a','#f472b6','#f472b6',_,_,_,_],
+  [_,'#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6',_,_,_],
+  [_,'#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6','#f472b6',_,_,_],
+  [_,_,'#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706',_,_,_,_],
+  [_,_,_,'#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706','#d97706',_,_,_,_,_],
+  [_,_,_,_,'#d97706','#d97706','#d97706','#d97706','#d97706','#d97706',_,_,_,_,_,_],
+  [_,_,_,_,_,'#78350f','#78350f','#78350f','#78350f','#78350f',_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]
+];
+
+const TEACUP_PIXELS = [
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,'#2dd4bf',_,_,_,'#2dd4bf',_,_,_,_,_,_],
+  [_,_,_,_,'#2dd4bf',_,_,_,_,_,'#2dd4bf',_,_,_,_,_],
+  [_,_,_,'#2dd4bf',_,_,_,_,_,_,_,'#2dd4bf',_,_,_,_],
+  [_,_,_,'#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6',_,_,_,_,_],
+  [_,_,'#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6',_,_,_,_],
+  [_,'#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6',_,_,_],
+  [_,'#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6',_,_,_],
+  [_,'#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6',_,_,_],
+  [_,_,'#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6','#14b8a6',_,_,_,_],
+  [_,_,_,'#0d9488','#0d9488','#0d9488','#0d9488','#0d9488','#0d9488','#0d9488','#0d9488',_,_,_,_,_],
+  [_,_,_,'#115e59','#115e59','#115e59','#115e59','#115e59','#115e59','#115e59','#115e59',_,_,_,_,_],
+  [_,_,_,_,_,'#115e59','#115e59','#115e59','#115e59','#115e59',_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_]
+];
+
+// Small component to render pixel art
+function PixelArt({ pixels, size = 3 }: { pixels: string[][], size?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const rows = pixels.length;
+    const cols = pixels[0].length;
+    
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const color = pixels[r][c];
+        if (color) {
+          ctx.fillStyle = color;
+          ctx.fillRect(c * size, r * size, size, size);
+        }
+      }
+    }
+  }, [pixels, size]);
+  
+  return (
+    <canvas
+      ref={canvasRef}
+      width={pixels[0].length * size}
+      height={pixels.length * size}
+      className="select-none"
+      style={{ imageRendering: 'pixelated' }}
+    />
+  );
+}
 
 interface CountdownWishProps {
   onTriggerPrank: () => void;
@@ -13,10 +110,11 @@ interface CountdownWishProps {
 }
 
 export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: CountdownWishProps) {
-  // Target birthday: 30th May, 2026 (UTC/Local)
-  const targetDate = new Date('2026-05-30T00:00:00');
+  // Target birthday: today's midnight (tomorrow at 00:00)
+  const today = new Date();
+  const targetDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 0);
 
-  const [timeLeft, setTimeLeft] = useState({
+  const [timeData, setTimeData] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
@@ -24,7 +122,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
     isBirthday: false,
   });
 
-  const [bypassCountdown, setBypassCountdown] = useState(false);
+  const [celebrationStarted, setCelebrationStarted] = useState(false);
   const [candlesLit, setCandlesLit] = useState([true, true, true, true, true]);
   const [revealedWishes, setRevealedWishes] = useState<Record<number, boolean>>({});
   const [activeGiftIndex, setActiveGiftIndex] = useState<number | null>(null);
@@ -71,23 +169,28 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
   };
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
+    const calculateTime = () => {
       const now = new Date();
       const diff = targetDate.getTime() - now.getTime();
 
       if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isBirthday: true });
+        const elapsed = Math.abs(diff);
+        const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((elapsed / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((elapsed / 1000 / 60) % 60);
+        const seconds = Math.floor((elapsed / 1000) % 60);
+        setTimeData({ days, hours, minutes, seconds, isBirthday: true });
       } else {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((diff / 1000 / 60) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
-        setTimeLeft({ days, hours, minutes, seconds, isBirthday: false });
+        setTimeData({ days, hours, minutes, seconds, isBirthday: false });
       }
     };
 
-    calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 1000);
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -119,6 +222,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
   };
 
   const handleGiftClick = (index: number) => {
+    if (!cakeBlownOut) return;
     if (!revealedWishes[index]) {
       setRevealedWishes(prev => ({ ...prev, [index]: true }));
       playGiftChime(index);
@@ -131,7 +235,12 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
     setCakeBlownOut(false);
   };
 
-  const activeCelebration = timeLeft.isBirthday || bypassCountdown;
+  const activeCelebration = timeData.isBirthday;
+  
+  const allGiftsRevealed = Object.keys(revealedWishes).length >= 3 && 
+    revealedWishes[0] === true && 
+    revealedWishes[1] === true && 
+    revealedWishes[2] === true;
 
   const giftDetails = [
     {
@@ -155,14 +264,16 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
   ];
 
   return (
-    <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-4 py-16 selection:bg-rose-500 selection:text-white" id="main-birthday-frame">
+    <div className="relative z-20 flex flex-col items-center justify-center min-h-screen px-3 py-10 sm:px-4 sm:py-16 selection:bg-rose-500 selection:text-white" id="main-birthday-frame">
       
       {/* 1. Cozy Greeting Card Presentation */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.98, y: -20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        className="text-center mb-16 max-w-3xl w-full mx-auto px-6 py-12 sm:px-12 sm:py-16 rounded-[2.2rem] relative overflow-hidden bg-gradient-to-br from-[#1b120c]/98 to-[#100905]/98 border-2 border-double border-amber-500/30 shadow-[0_25px_70px_rgba(0,0,0,0.75)] backdrop-blur-lg flex flex-col items-center selection:bg-rose-500/40"
+        className={`text-center mb-10 max-w-3xl w-full mx-auto px-4 py-8 sm:px-12 sm:py-16 rounded-[2.2rem] relative overflow-hidden bg-gradient-to-br from-[#1b120c]/98 to-[#100905]/98 border-2 border-double border-amber-500/30 shadow-[0_25px_70px_rgba(0,0,0,0.75)] backdrop-blur-lg flex flex-col items-center selection:bg-rose-500/40 transition-all duration-700 ${
+          timeData.isBirthday ? "" : "blur-sm opacity-60"
+        }`}
         id="birthday-head-banner"
       >
         {/* Handcrafted filigree style corner ornaments */}
@@ -192,67 +303,80 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
       </motion.div>
 
       {/* 2. Interactive States Container */}
-      <div className="w-full max-w-4xl flex justify-center" id="interactive-wish-grid">
-        <AnimatePresence mode="wait">
-          {!activeCelebration ? (
-            // COUNTDOWN VIEW WITH FROSTED GLASS
-            <motion.div
-              key="countdown-panel"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl glass-panel shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-3xl p-6 sm:p-8 text-center"
-              id="countdown-glass-card"
-            >
-              <div className="flex justify-center items-center gap-2 mb-4 text-amber-300" id="countdown-title">
-                <Book className="w-5 h-5 opacity-85" />
-                <span className="font-magic text-xs tracking-wider text-orange-200 font-bold uppercase">counting down the days to your special day</span>
-              </div>
-              
-              <h2 className="font-magic text-2xl sm:text-3xl text-white font-bold tracking-widest mb-6">ALMOST HERE...</h2>
+      <div className="w-full max-w-4xl flex flex-col items-center gap-8" id="interactive-wish-grid">
+        {/* COUNTDOWN VIEW WITH FROSTED GLASS (Always Visible */}
+        <motion.div
+          key="countdown-panel"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-xl glass-panel shadow-[0_25px_60px_rgba(0,0,0,0.6)] rounded-3xl p-6 sm:p-8 text-center"
+          id="countdown-glass-card"
+        >
+          <div className="flex justify-center items-center gap-2 mb-4 text-amber-300" id="countdown-title">
+            <Book className="w-5 h-5 opacity-85" />
+            <span className="font-magic text-xs tracking-wider text-orange-200 font-bold uppercase">
+              {timeData.isBirthday ? "Celebrating your special day!" : "counting down the days to your special day"}
+            </span>
+          </div>
+          
+          <h2 className="font-magic text-2xl sm:text-3xl text-white font-bold tracking-widest mb-6">
+            {timeData.isBirthday ? "You are now 20 girl! 🎉" : "Almost there...."}
+          </h2>
 
-              {/* Countdown Numbers Grid */}
-              <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-8" id="countdown-grid">
-                {[
-                  { label: 'Days', val: timeLeft.days },
-                  { label: 'Hours', val: timeLeft.hours },
-                  { label: 'Minutes', val: timeLeft.minutes },
-                  { label: 'Seconds', val: timeLeft.seconds },
-                ].map((col, idx) => (
-                  <div key={col.label} className="flex flex-col bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4 text-center backdrop-blur-sm shadow-inner transition hover:border-amber-500/20">
-                    <span className="text-2xl sm:text-6xl font-magic font-extrabold accent-gradient gold-glow">
-                      {String(col.val).padStart(2, '0')}
-                    </span>
-                    <span className="text-[10px] sm:text-xs font-magic uppercase tracking-widest text-amber-200/65 mt-1.5 font-bold">
-                      {col.label}
-                    </span>
-                  </div>
-                ))}
+          {/* Countdown/Countup Numbers Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8" id="countdown-grid">
+            {[
+              { label: 'Days', val: timeData.days },
+              { label: 'Hours', val: timeData.hours },
+              { label: 'Minutes', val: timeData.minutes },
+              { label: 'Seconds', val: timeData.seconds },
+            ].map((col, idx) => (
+              <div key={col.label} className="flex flex-col bg-white/[0.02] border border-white/5 rounded-2xl p-3 sm:p-4 text-center backdrop-blur-sm shadow-inner transition hover:border-amber-500/20">
+                <span className="text-4xl sm:text-6xl font-magic font-extrabold accent-gradient gold-glow">
+                  {String(col.val).padStart(2, '0')}
+                </span>
+                <span className="text-[10px] sm:text-xs font-magic uppercase tracking-widest text-amber-200/65 mt-1.5 font-bold">
+                  {col.label}
+                </span>
               </div>
+            ))}
+          </div>
 
-              {/* Early Celebrate CTA */}
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setBypassCountdown(true)}
-                className="group relative inline-flex items-center gap-2.5 px-7 py-3.5 bg-white text-black rounded-full font-semibold text-sm tracking-wider shadow-lg shadow-white/5 overflow-hidden cursor-pointer hover:bg-zinc-100 transition-colors duration-300"
-                id="btn-celebrate-early"
-              >
-                <Sparkles className="w-4 h-4 animate-spin-slow text-amber-600" />
-                <span>come on in! 🥐</span>
-                <Gift className="w-4 h-4 text-amber-600 transition-transform group-hover:translate-x-0.5" />
-              </motion.button>
-            </motion.div>
-          ) : (
-            // CELEBRATION DISCOVERY PANELS (CAKE & PRESENTS) WITH GLOSSY DARK Vibe
-            <motion.div
-              key="celebration-panel"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 80, damping: 15 }}
-              className="w-full flex flex-col gap-8"
-              id="birthday-celebration-modules"
-            >
+          {/* Early Celebrate CTA */}
+          <motion.button
+            whileHover={activeCelebration && !celebrationStarted ? { scale: 1.05 } : {}}
+            whileTap={activeCelebration && !celebrationStarted ? { scale: 0.98 } : {}}
+            disabled={!activeCelebration}
+            onClick={() => {
+              if (activeCelebration) {
+                setCelebrationStarted(true);
+              }
+            }}
+            className={`group relative inline-flex items-center gap-2 px-4 py-3 sm:px-7 sm:py-3.5 rounded-full font-semibold text-sm tracking-wider shadow-lg overflow-hidden transition-all duration-300 ${
+              !activeCelebration 
+                ? "bg-zinc-700 text-zinc-400 shadow-zinc-900/30 cursor-not-allowed opacity-70"
+                : celebrationStarted
+                  ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white cursor-default shadow-amber-500/20"
+                  : "bg-white text-black shadow-white/5 cursor-pointer hover:bg-zinc-100"
+            }`}
+            id="btn-celebrate-early"
+          >
+            <Sparkles className="w-4 h-4 animate-spin-slow text-amber-600" />
+            <span className="text-xs sm:text-sm">{celebrationStarted ? "celebration started! ✨" : "come on in! 🥐"}</span>
+            <Gift className="w-4 h-4 text-amber-600 transition-transform group-hover:translate-x-0.5" />
+          </motion.button>
+        </motion.div>
+
+        {/* CELEBRATION DISCOVERY PANELS (CAKE & PRESENTS) WITH GLOSSY DARK Vibe (Only when celebrationStarted is true) */}
+        {celebrationStarted && (
+          <motion.div
+            key="celebration-panel"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 80, damping: 15 }}
+            className="w-full flex flex-col gap-8"
+            id="birthday-celebration-modules"
+          >
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
                 
                 {/* A. Dynamic Interactive Birthday Cake Part - Greeting Card Version */}
@@ -279,7 +403,7 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                   </div>
 
                   {/* SVG Animated Interactive Birthday Cake */}
-                  <div className="my-6 py-4 flex justify-center items-end h-56 relative" id="interactive-cake-stage">
+                  <div className="my-4 py-3 flex justify-center items-end h-48 sm:h-56 relative" id="interactive-cake-stage">
                     
                     {/* SVG Cake Container */}
                     <svg className="w-48 h-44 overflow-visible" viewBox="0 0 200 200">
@@ -377,7 +501,11 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                     <span className="text-xs font-magic tracking-[0.15em] text-amber-200 font-bold block mb-1 uppercase">🎁 some cozy boxes to unwrap</span>
                     <h3 className="font-magic text-2xl text-white font-bold tracking-wide">YOUR BIRTHDAY WISHES</h3>
                     <p className="font-sans text-xs text-stone-300 leading-relaxed max-w-xl font-light">
-                      i set these aside for you. tap each one to unwrap a gentle blessing.
+                      {!cakeBlownOut
+                        ? 'blow out all the candles first to unlock your birthday wishes!'
+                        : allGiftsRevealed
+                          ? 'you have unlocked all your wishes! now check your letter!'
+                          : 'i set these aside for you. tap each one to unwrap a gentle blessing.'}
                     </p>
                   </div>
 
@@ -388,20 +516,27 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                       const isActive = activeGiftIndex === idx;
                       return (
                         <div key={idx} className="flex flex-col items-center">
-                          <motion.div
-                            whileHover={{ scale: isActive ? 1.05 : 1.02, rotate: !revealed ? [0, -4, 4, -4, 0] : 0 }}
-                            transition={{ duration: 0.3 }}
-                            onClick={() => handleGiftClick(idx)}
-                            className={`w-full aspect-square flex items-center justify-center rounded-2xl cursor-pointer shadow-lg relative border transition-all duration-300 overflow-hidden ${
-                              revealed 
+                        <motion.div
+                          whileHover={
+                            !cakeBlownOut ? {} :
+                            isActive ? { scale: 1.05 } :
+                            !revealed ? { scale: 1.02, rotate: [0, -4, 4, -4, 0] } :
+                            {}
+                          }
+                          transition={{ duration: 0.3 }}
+                          onClick={() => handleGiftClick(idx)}
+                          className={`w-full aspect-square flex items-center justify-center rounded-2xl shadow-lg relative border transition-all duration-300 overflow-hidden ${
+                            !cakeBlownOut
+                              ? 'cursor-not-allowed bg-white/[0.01] border-white/2 opacity-40 grayscale'
+                              : revealed 
                                 ? isActive
                                   ? 'bg-gradient-to-tr ' + details.color + ' border-amber-400/80 ring-4 ring-amber-400/20 scale-100 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
                                   : 'bg-gradient-to-tr ' + details.color + ' border-transparent scale-90 opacity-60 hover:opacity-90 hover:scale-95'
                                 : isActive
-                                  ? 'bg-white/[0.06] border-purple-400/60 ring-4 ring-purple-400/10 scale-95'
-                                  : 'bg-white/[0.02] border-white/5 hover:border-purple-400/20 hover:bg-white/[0.04]'
-                            }`}
-                          >
+                                  ? 'bg-white/[0.06] border-purple-400/60 ring-4 ring-purple-400/10 scale-95 cursor-pointer'
+                                  : 'bg-white/[0.02] border-white/5 hover:border-purple-400/20 hover:bg-white/[0.04] cursor-pointer'
+                          }`}
+                        >
                             <AnimatePresence mode="wait">
                               {!revealed ? (
                                 <motion.div 
@@ -412,35 +547,11 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                                   className="flex flex-col items-center gap-1.5 p-3 text-center"
                                 >
                                   {idx === 0 ? (
-                                    /* Beautiful Hardcover Book Vector with bookmark ribbon */
-                                    <svg className="w-12 h-12" viewBox="0 0 64 64" fill="none">
-                                      <rect x="16" y="12" width="32" height="42" rx="4" fill="#d97706" />
-                                      <rect x="20" y="10" width="28" height="44" rx="3" fill="#92400e" stroke="#27170e" strokeWidth="1.5" />
-                                      <rect x="24" y="14" width="20" height="36" fill="#fef3c7" />
-                                      <path d="M32,38 L32,52 L36,48 L40,52 L40,38 Z" fill="#ef4444" />
-                                      <line x1="20" y1="18" x2="24" y2="18" stroke="#f59e0b" strokeWidth="2" />
-                                      <line x1="20" y1="26" x2="24" y2="26" stroke="#f59e0b" strokeWidth="2" />
-                                      <line x1="20" y1="34" x2="24" y2="34" stroke="#f59e0b" strokeWidth="2" />
-                                    </svg>
+                                    <PixelArt pixels={BOOK_PIXELS} size={3} />
                                   ) : idx === 1 ? (
-                                    /* Beautiful Fluffy Frosting Pastry Cupcake / Cherry */
-                                    <svg className="w-12 h-12" viewBox="0 0 64 64" fill="none">
-                                      <path d="M20,38 L44,38 L38,54 L26,54 Z" fill="#d97706" stroke="#78350f" strokeWidth="1.5" />
-                                      <path d="M16,36 C16,28 24,24 32,24 C40,24 48,28 48,36 Z" fill="#f472b6" />
-                                      <path d="M22,28 C22,20 30,16 32,16 C34,16 42,20 42,28 Z" fill="#fdf08a" />
-                                      <circle cx="32" cy="14" r="4.5" fill="#ef4444" />
-                                      <path d="M33,10 Q37,4 42,6" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
+                                    <PixelArt pixels={CUPCAKE_PIXELS} size={3} />
                                   ) : (
-                                    /* Steaming beautiful Tea Cup and Saucer */
-                                    <svg className="w-12 h-12" viewBox="0 0 64 64" fill="none">
-                                      <path d="M18,22 C18,36 46,36 46,22 Z" fill="#14b8a6" stroke="#0f766e" strokeWidth="1.5" />
-                                      <path d="M44,24 C50,24 50,32 44,32" stroke="#14b8a6" strokeWidth="3" fill="none" />
-                                      <ellipse cx="32" cy="40" rx="18" ry="3" fill="#115e59" stroke="#0d9488" strokeWidth="1.5" />
-                                      <path d="M26,16 Q28,10 26,6" stroke="#2dd4bf" strokeWidth="2.2" strokeLinecap="round" />
-                                      <path d="M32,14 Q34,8 32,4" stroke="#2dd4bf" strokeWidth="2.2" strokeLinecap="round" />
-                                      <path d="M38,16 Q40,10 38,6" stroke="#2dd4bf" strokeWidth="2.2" strokeLinecap="round" />
-                                    </svg>
+                                    <PixelArt pixels={TEACUP_PIXELS} size={3} />
                                   )}
                                   <span className="text-[10px] sm:text-xs text-amber-250 mt-1 uppercase font-semibold tracking-wider">Unwrap</span>
                                 </motion.div>
@@ -591,27 +702,28 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                 </div>
 
                 {/* 2. Personalized Interactive Letter Box */}
-                <div className="w-full mt-6" id="personalized-letter-box">
-                  <div className="text-center max-w-xl mx-auto flex flex-col items-center mb-8">
-                    <span className="text-[10px] font-magic tracking-[0.25em] text-amber-200 font-bold uppercase block mb-1">✨ a note for Goru</span>
-                    <h3 className="font-magic text-xl sm:text-2xl text-stone-200 font-bold tracking-wide">A LETTER FROM THE HEART</h3>
-                  </div>
+                {allGiftsRevealed || envelopeOpened ? (
+                  <div className="w-full mt-6" id="personalized-letter-box">
+                    <div className="text-center max-w-xl mx-auto flex flex-col items-center mb-8">
+                      <span className="text-[10px] font-magic tracking-[0.25em] text-amber-200 font-bold uppercase block mb-1">✨ a note for Goru</span>
+                      <h3 className="font-magic text-xl sm:text-2xl text-stone-200 font-bold tracking-wide">A LETTER FROM THE HEART</h3>
+                    </div>
 
-                  <AnimatePresence mode="wait">
-                    {!envelopeOpened ? (
-                      // Sealed Envelope UI
-                      <motion.div 
-                        key="sealed-letter"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        onClick={() => {
-                          setEnvelopeOpened(true);
-                          playGiftChime(1);
-                          onLetterUnlock();
-                        }}
-                        className="w-full max-w-xl mx-auto bg-gradient-to-br from-[#1c130d]/98 to-[#110a06]/98 border-2 border-double border-amber-500/30 hover:border-amber-500/50 transition-all duration-300 rounded-[2.2rem] p-8 text-center cursor-pointer shadow-2xl group flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden"
-                      >
+                    <AnimatePresence mode="wait">
+                      {!envelopeOpened ? (
+                        // Sealed Envelope UI
+                        <motion.div 
+                          key="sealed-letter"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          onClick={() => {
+                            setEnvelopeOpened(true);
+                            playGiftChime(1);
+                            onLetterUnlock();
+                          }}
+                          className="w-full max-w-xl mx-auto bg-gradient-to-br from-[#1c130d]/98 to-[#110a06]/98 border-2 border-double border-amber-500/30 hover:border-amber-500/50 transition-all duration-300 rounded-[2.2rem] p-8 text-center cursor-pointer shadow-2xl group flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden"
+                        >
                         {/* Decorative background grid and sparkles */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 to-red-500/5 pointer-events-none" />
                         <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full bg-amber-500/10 blur-2xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
@@ -703,13 +815,12 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                               "— Well, thank u for being my friend goru! :)"
                             </p>
                           </div>
-
-
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
+              ) : null}
 
                 {/* Card 5: Unlimited Sheep Farm Context */}
                 <motion.div 
@@ -741,15 +852,12 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                     <span>• unlimited sheep farm active</span>
                   </div>
                 </motion.div>
-
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
       </div>
 
       {/* 3. Bottom Text "happy beith torsites" & Surprise Button */}
-      {/* Merged with Sophisticated Dark line-dividors and pure white high-contrast button formatting */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -757,17 +865,16 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
         className="mt-20 text-center flex flex-col items-center space-y-8 z-20 pt-8 w-full max-w-xl relative"
         id="prank-trigger-lobby"
       >
-        {/* Playful greeting divider style matching Sophisticated Dark */}
+        {/* Playful greeting divider style */}
         <div className="flex items-center space-x-4 opacity-75">
           <div className="h-[1px] w-12 sm:w-24 bg-white/30"></div>
-          {/* Exact phrase requested by user */}
           <span className="font-magic text-[11px] sm:text-xs tracking-[0.25em] uppercase font-bold text-amber-200">
             happy beith torsites
           </span>
           <div className="h-[1px] w-12 sm:w-24 bg-white/30"></div>
         </div>
 
-        {/* Surprise Button Triggering Sheep Prank with soft background glow overlay */}
+        {/* Surprise Button Triggering Sheep Prank */}
         <div className="relative group">
           {envelopeOpened && (
             <div className="absolute inset-0 bg-white opacity-8 rounded-full blur-xl group-hover:opacity-15 transition-all duration-300 pointer-events-none" />
@@ -787,7 +894,6 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
           >
             {envelopeOpened ? (
               <>
-                {/* Exact spelling requested by user: "little suprice for u" */}
                 <span className="font-magic font-extrabold text-xs sm:text-sm tracking-widest uppercase">LITTLE SUPRICE FOR U 🎁</span>
                 
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -799,14 +905,12 @@ export default function CountdownWish({ onTriggerPrank, onLetterUnlock }: Countd
                 <span className="font-magic font-extrabold text-xs sm:text-sm tracking-widest uppercase">SURPRISE LOCKED 🔒</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  <path d="M7 11V7a5.5 5.5 0 0 1 10 0v4" />
                 </svg>
               </>
             )}
           </motion.button>
         </div>
-
-
       </motion.div>
     </div>
   );

@@ -26,7 +26,7 @@ export default function App() {
   // Detect landscape orientation on mobile devices — app is portrait-only on mobile
   useEffect(() => {
     const checkOrientation = () => {
-      const isMobileWidth = window.innerWidth < 1024 || window.innerHeight < 1024;
+      const isMobileWidth = window.innerWidth < 768;
       const isLandscape = window.innerWidth > window.innerHeight;
       setIsLandscapeMobile(isMobileWidth && isLandscape);
     };
